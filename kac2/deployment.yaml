@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kac-api-service
+  namespace: default
+  labels:
+    app: kac-api
+spec:
+  ports:
+  - port: 443
+    protocol: TCP
+    name: phttps
+    targetPort: webhook-api
+  # clusterIP: None
+  selector:
+    app: kac-api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kac-api-deployment
+  namespace: default
+  labels:
+    app: kac-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kac-api
+  template:
+    metadata:
+      labels:
+        app: kac-api
+    spec:
+      containers:
+      - name: kac-api
+        image: kac-api
+        ports:
+        - containerPort: 3000
+          name: webhook-api
+        volumeMounts:
+        - name: webhook-tls-certs
+          mountPath: /run/secrets/tls
+          readOnly: true
+      volumes:
+      - name: webhook-tls-certs
+        secret:
+          secretName: webhook-server-tls
