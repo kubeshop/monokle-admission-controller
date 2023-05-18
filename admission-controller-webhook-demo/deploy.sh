@@ -45,7 +45,8 @@ ca_pem_b64="$(openssl base64 -A <"${keydir}/ca.crt")"
 sed -e 's@${CA_PEM_B64}@'"$ca_pem_b64"'@g' <"${basedir}/webhook.yaml.template" > webhook.yaml
 cp deployment/deployment.yaml.template deployment.yaml
 
-kubectl apply -f deployment.yaml
+skaffold run --namespace webhook-demo
+# kubectl apply -f deployment.yaml
 sleep 10
 kubectl apply -f webhook.yaml
 
