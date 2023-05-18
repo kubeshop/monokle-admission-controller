@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: pod-with-conflict
+  name: pod-fixed
   labels:
-    app: pod-with-conflict
+    app: pod-fixed
 spec:
   restartPolicy: OnFailure
   securityContext:
