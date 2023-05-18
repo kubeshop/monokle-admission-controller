@@ -31,10 +31,23 @@ cd admission-controller-webhook-demo
 ./deploy.sh
 ```
 
-After it runs, the result should be:
+After it runs, the result should be something like:
 
 ```bash
+NAME                                  READY   STATUS    RESTARTS   AGE
+pod/webhook-server-55dd5d6f44-lwwnw   1/1     Running   0          11s
 
+NAME                     TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
+service/webhook-server   ClusterIP   10.96.18.123   <none>        443/TCP   11s
+
+NAME                             READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/webhook-server   1/1     1            1           11s
+
+NAME                                        DESIRED   CURRENT   READY   AGE
+replicaset.apps/webhook-server-55dd5d6f44   1         1         1       11s
+
+NAME                                                                       WEBHOOKS   AGE
+validatingwebhookconfiguration.admissionregistration.k8s.io/demo-webhook   1          6s
 ```
 
 ### Testing
@@ -45,6 +58,16 @@ You can try to create sample resource and see webhook response:
 cd admission-controller-webhook-demo
 kubectl -n webhook-demo create -f examples/pod-with-conflict.yaml
 ```
+
+### Iterating
+
+After everything is running you can allow hot-reload by running:
+
+```bash
+skaffold dev --namespace webhook-demo
+```
+
+**Important**: Skaffold will recreate deployment on every change so make sure that webhook pod doesn't get rejected by it's previous version (via Validation Admission Controller).
 
 ## Refs
 

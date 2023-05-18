@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@kubernetes/client-node": "^0.18.1",
     "fastify": "^3.28.0"
   },
   "devDependencies": {
