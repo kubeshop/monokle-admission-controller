@@ -10,7 +10,7 @@ webhooks:
       service:
         name: webhook-server
         namespace: webhook-demo
-        path: "/mutate"
+        path: "/validate"
       caBundle: ${CA_PEM_B64}
     rules:
       - operations: [ "CREATE" ]

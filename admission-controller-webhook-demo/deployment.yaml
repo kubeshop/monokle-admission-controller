@@ -15,13 +15,13 @@ spec:
       labels:
         app: webhook-server
     spec:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1234
+      #securityContext:
+      #  runAsNonRoot: true
+      #  runAsUser: 1234
       containers:
       - name: server
-        image: stackrox/admission-controller-webhook-demo:latest
-        imagePullPolicy: Always
+        image: kac-api
+        #imagePullPolicy: Always
         ports:
         - containerPort: 8443
           name: webhook-api
