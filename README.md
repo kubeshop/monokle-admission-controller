@@ -1,10 +1,13 @@
 # K8s Admission Controller Demo
 
-This got a lot of inspiration from https://github.com/stackrox/admission-controller-webhook-demo.
+This was heavily inspired by https://github.com/stackrox/admission-controller-webhook-demo.
+
+And since it is hackaton PoC there was massive amount of duct tape applied in some places ;)
 
 ## Prerequisites
 
 * Minikube (or any other K8s cluster running)
+* kubectl
 * Skaffold
 * nodejs
 
@@ -27,7 +30,6 @@ watch kubectl -n webhook-demo get all,ValidatingWebhookConfiguration,MutatingWeb
 ### Deploying
 
 ```bash
-cd admission-controller-webhook-demo
 ./deploy.sh
 ```
 
@@ -55,7 +57,6 @@ validatingwebhookconfiguration.admissionregistration.k8s.io/demo-webhook   1    
 You can try to create sample resource and see webhook response:
 
 ```bash
-cd admission-controller-webhook-demo
 kubectl -n webhook-demo create -f examples/pod-with-conflict.yaml
 ```
 
@@ -64,7 +65,7 @@ kubectl -n webhook-demo create -f examples/pod-with-conflict.yaml
 After everything is running you can allow hot-reload by running:
 
 ```bash
-skaffold dev --namespace webhook-demo
+skaffold dev
 ```
 
 **Important**: Skaffold will recreate deployment on every change so make sure that webhook pod doesn't get rejected by it's previous version (via Validation Admission Controller).
