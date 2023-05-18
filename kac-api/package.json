@@ -2,7 +2,8 @@
   "name": "kac2",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node ./dist/index.js",
@@ -12,7 +13,11 @@
   "license": "ISC",
   "dependencies": {
     "@kubernetes/client-node": "^0.18.1",
-    "fastify": "^3.28.0"
+    "@monokle/validation": "^0.16.0",
+    "fastify": "^3.28.0",
+    "isomorphic-fetch": "^3.0.0",
+    "node-fetch": "^2.6.6",
+    "type-fest": "^3.10.0"
   },
   "devDependencies": {
     "@types/node": "^20.1.7",
