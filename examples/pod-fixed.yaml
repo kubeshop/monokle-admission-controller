@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-with-conflict
+  labels:
+    app: pod-with-conflict
+spec:
+  restartPolicy: OnFailure
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 0
+  containers:
+    - name: busybox
+      image: busybox:1.36.0
+      command: ["sh", "-c", "echo I am running as user $(id -u)"]
+      securityContext:
+        allowPrivilegeEscalation: false
+        runAsGroup: 11000
+        runAsUser: 11001
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: [ALL]
+      resources:
+        limits:
+          cpu: 500m
+          memory: 512M
+        requests:
+          cpu: 250m
+          memory: 256M
