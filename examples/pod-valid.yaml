@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: pod-fixed
+  name: pod-valid
   labels:
-    app: pod-fixed
+    app: pod-valid
 spec:
   restartPolicy: OnFailure
   securityContext:

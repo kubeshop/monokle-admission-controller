@@ -84,14 +84,14 @@ server.post("/validate", async (req, res): Promise<AdmissionResponse> => {
     const message = [];
 
     if (errors.length > 0) {
-      message.push(`\n${errors.length} errors found:\n${errorsList}`);
+      message.push(`\n${errors.length} errors found:\n${errorsList}\n`);
     }
 
     if (warnings.length > 0) {
-      message.push(`\n${warnings.length} warnings found:\n${warningsList}`);
+      message.push(`\n${warnings.length} warnings found:\n${warningsList}\n`);
     }
 
-    message.push("\n\nYou can use Monokle (https://monokle.io/) to validate and fix those errors easily!");
+    message.push("\nYou can use Monokle (https://monokle.io/) to validate and fix those errors easily!");
 
     response.response.allowed = false;
     response.response.status.message = message.join("");
