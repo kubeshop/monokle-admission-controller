@@ -76,3 +76,36 @@ skaffold dev
 * https://github.com/stackrox/admission-controller-webhook-demo/tree/master
 * https://www.witodelnat.eu/blog/2021/local-kubernetes-development
 * https://minikube.sigs.k8s.io/docs/tutorials/using_psp/
+
+## Policy as CRDs
+
+> https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/
+> https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/
+
+1. Start minikube.
+1. Apply resource definition:
+
+```bash
+kubectl apply -f monokle.policy.crd.yaml
+```
+
+3. Test if it was applied correctly:
+
+```bash
+kubectl get crd
+kubectl get monoklepolicy
+kubectl describe crd monoklepolicies.monokle.com
+```
+
+4. Create sample policy resource:
+
+```bash
+kubectl apply -f policy.yaml
+```
+
+5. Test if it was applied correctly:
+
+```bash
+kubectl get monoklepolicy
+kubectl describe monoklepolicy policy-sample
+```
