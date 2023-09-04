@@ -109,3 +109,17 @@ kubectl apply -f policy.yaml
 kubectl get monoklepolicy
 kubectl describe monoklepolicy policy-sample
 ```
+
+### CRDs Informer
+
+You can test how watching CRDs changes works by running:
+
+```bash
+node kac-api/scripts/list-policies.js
+```
+
+and (re)applying sample policy:
+
+```bash
+kubectl apply -f policy.yaml
+```
