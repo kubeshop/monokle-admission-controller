@@ -3,6 +3,7 @@ import path from "path";
 import fastify from "fastify";
 import {V1ValidatingWebhookConfiguration, V1ObjectMeta} from "@kubernetes/client-node";
 import {createDefaultMonokleValidator, Resource} from "@monokle/validation";
+import { getInformer } from "./utils/informer";
 
 // TODO - some mismatch with types, this is not exactly the type which should be used
 type AdmissionRequest = V1ValidatingWebhookConfiguration & {
@@ -23,7 +24,10 @@ type AdmissionResponse = {
     }
 }
 
-const validator = createDefaultMonokleValidator();
+
+
+
+
 
 const server = fastify({
   https: {
@@ -32,6 +36,9 @@ const server = fastify({
   }
 });
 
+
+// Validate endpoint logic should be as thin as possible to reduce impact on resource creation time.
+// All the preloading related to validator should be done separately (before or in the meantime).
 server.post("/validate", async (req, res): Promise<AdmissionResponse> => {
   console.log('request', req.headers, req.body)
 
@@ -125,4 +132,41 @@ function createResourceForValidation(admissionResource: AdmissionRequest): Resou
   };
 
   return resource;
+}
+
+async function init() {
+  let awaitValidatorReadiness = Promise.resolve();
+  let hasPolicy = false;
+
+  // kube-client get current namespace where webhook is deployed
+  // https://stackoverflow.com/a/46046153
+
+  // init validator
+  const validator = createDefaultMonokleValidator();
+
+  // init informer
+  const informer = await getInformer(
+    // For now the assumption is there is one policy per namespace.
+    async (obj) => {
+      const policyConfig = obj.spec;
+
+      hasPolicy = true;
+      awaitValidatorReadiness = validator.preload(policyConfig);
+      await awaitValidatorReadiness;
+    },
+    async (obj) => {
+      const policyConfig = obj.spec;
+
+      hasPolicy = true;
+      awaitValidatorReadiness = validator.preload(policyConfig);
+      await awaitValidatorReadiness;
+    },
+    (obj) => {
+      // if policy was deleted, we fallback to default, disabled policy?
+      // or just skip validation for new resources (because it doesn't make sense to validate against empty policy anyways)
+      hasPolicy = false;
+    }
+  );
+
+  // init server
 }
