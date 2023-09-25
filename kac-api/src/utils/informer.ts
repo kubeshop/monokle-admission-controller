@@ -12,8 +12,32 @@ export async function getInformer(
   namespace = 'default',
   onError?: k8s.ErrorCallback
 ) {
-  const kc = new k8s.KubeConfig()
-  kc.loadFromDefault()
+  let informer: Awaited<ReturnType<typeof createInformer>> | null = null;
+
+  let tries = 0;
+  while (!informer) {
+    try {
+      tries++;
+      informer = await createInformer(onAdded, onUpdated, onDeleted, namespace, onError);
+      return informer;
+    } catch (err: any) {
+      console.error(`INFORMER:CREATION:ERROR, try ${tries}`, err.message, err.body);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  }
+
+  return informer;
+}
+
+async function createInformer(
+  onAdded: k8s.ObjectCallback<MonoklePolicy>,
+  onUpdated: k8s.ObjectCallback<MonoklePolicy>,
+  onDeleted: k8s.ObjectCallback<MonoklePolicy>,
+  namespace = 'default',
+  onError?: k8s.ErrorCallback
+) {
+  const kc = new k8s.KubeConfig();
+  kc.loadFromCluster();
 
   const k8sApi = kc.makeApiClient(k8s.CustomObjectsApi)
   const listFn = () => k8sApi.listNamespacedCustomObject('monokle.com','v1', namespace, 'monoklepolicies');

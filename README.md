@@ -57,7 +57,7 @@ validatingwebhookconfiguration.admissionregistration.k8s.io/demo-webhook   1    
 You can try to create sample resource and see webhook response:
 
 ```bash
-kubectl -n webhook-demo create -f examples/pod-with-conflict.yaml
+kubectl -n webhook-demo create -f examples/pod-warning.yaml
 ```
 
 ### Iterating
@@ -69,6 +69,15 @@ skaffold dev
 ```
 
 **Important**: Skaffold will recreate deployment on every change so make sure that webhook pod doesn't get rejected by it's previous version (via Validation Admission Controller).
+
+You can also do manual clean-up and run `./deploy.sh` script again:
+
+```bash
+kubectl delete all -n webhook-demo --all && \
+kubectl delete validatingwebhookconfiguration.admissionregistration.k8s.io/demo-webhook -n webhook-demo && \
+kubectl delete namespace webhook-demo && \
+kubectl delete crd monoklepolicies.monokle.com
+```
 
 ## Refs
 

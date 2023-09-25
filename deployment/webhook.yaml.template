@@ -17,3 +17,26 @@ webhooks:
         apiGroups: [""]
         apiVersions: ["v1"]
         resources: ["pods"]
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: crds-monokle-list
+rules:
+- apiGroups: ["monokle.com"]
+  resources: ["monoklepolicies"]
+  verbs: ["list", "watch", "get"]
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: crds-monokle-list
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: webhook-demo
+roleRef:
+  kind: ClusterRole
+  name: crds-monokle-list
+  apiGroup: rbac.authorization.k8s.io

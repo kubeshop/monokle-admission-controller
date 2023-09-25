@@ -41,6 +41,7 @@ export class ValidationServer {
     this._shouldValidate = false;
 
     this._server = fastify({
+      // @TODO do not require certs when running locally (for testing outside K8s cluster)
       https: {
         key: readFileSync(path.join('/run/secrets/tls', 'tls.key')),
         cert: readFileSync(path.join('/run/secrets/tls', 'tls.crt'))

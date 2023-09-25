@@ -48,6 +48,8 @@ cp deployment/deployment.yaml.template deployment.yaml
 skaffold run --namespace webhook-demo
 # kubectl apply -f deployment.yaml
 sleep 2
+kubectl apply -f monokle.policy.crd.yaml
+sleep 2
 kubectl apply -f webhook.yaml
 
 # skaffold dev
