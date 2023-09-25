@@ -13,7 +13,8 @@
   "license": "ISC",
   "dependencies": {
     "@kubernetes/client-node": "^0.18.1",
-    "@monokle/validation": "^0.16.0",
+    "@monokle/validation": "^0.30.1",
+    "@monokle/parser": "0.2.0",
     "fastify": "^3.28.0",
     "isomorphic-fetch": "^3.0.0",
     "node-fetch": "^2.6.6",
