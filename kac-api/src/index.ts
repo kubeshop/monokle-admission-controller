@@ -1,12 +1,24 @@
-import {AnnotationSuppressor, FingerprintSuppressor, MonokleValidator, RemotePluginLoader, SchemaLoader, DisabledFixer, ResourceParser} from "@monokle/validation";
-import { MonoklePolicy, getInformer } from "./utils/informer.js";
-import { ValidationServer } from "./utils/validation-server.js";
-import { DEFAULT_NAMESPACE, getNamespace } from "./utils/helpers.js";
+import pino from 'pino';
+import {AnnotationSuppressor, FingerprintSuppressor, MonokleValidator, RemotePluginLoader, SchemaLoader, DisabledFixer, ResourceParser} from '@monokle/validation';
+import {MonoklePolicy, getInformer} from './utils/informer.js';
+import {ValidationServer} from './utils/validation-server.js';
+import {DEFAULT_NAMESPACE, getNamespace} from './utils/helpers.js';
 
 (async() => {
-  const currentNamespace = getNamespace() || DEFAULT_NAMESPACE;
+  const logger = pino({
+    name: 'Monokle',
+    level: 'trace',
+  });
 
-  console.log(`Admission Controller namespace ${currentNamespace}`);
+  let currentNamespace: string;
+  try {
+    currentNamespace = getNamespace() || DEFAULT_NAMESPACE;
+  } catch (err: any) {
+    logger.error('Failed to get current namespace', err);
+    process.exit(1);
+  }
+
+  logger.debug({namespace: currentNamespace});
 
   // VALIDATOR
   let awaitValidatorReadiness = Promise.resolve();
@@ -26,27 +38,27 @@ import { DEFAULT_NAMESPACE, getNamespace } from "./utils/helpers.js";
   let activePolicy: MonoklePolicy | null = null;
 
   const onPolicy = async (policy: MonoklePolicy) => {
-    console.log('POLICY:UPDATE', policy);
+    logger.info({msg: 'Informer: Policy updated', policy});
     activePolicy = policy;
     awaitValidatorReadiness = validator.preload(policy.spec);
     await awaitValidatorReadiness;
   }
 
   const onPolicyRemoval = async () => {
-    console.log('POLICY:REMOVAL');
+    logger.info('Informer: Policy removed');
     activePolicy = null;
     awaitValidatorReadiness = validator.preload({});
     await awaitValidatorReadiness;
   }
 
   const onError = (err: any) => {
-    console.log('ERROR:INFORMER', err);
+    logger.error({msg: 'Informer: Error', err});
   }
 
-  const informer = getInformer(onPolicy, onPolicy, onPolicyRemoval, currentNamespace, onError);
+  const informer = getInformer(onPolicy, onPolicy, onPolicyRemoval, onError, currentNamespace);
 
   // SERVER
-  const server = new ValidationServer(validator);
+  const server = new ValidationServer(validator, logger);
 
   await server.start();
 })();

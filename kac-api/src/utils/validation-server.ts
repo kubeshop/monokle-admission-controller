@@ -1,7 +1,8 @@
 import fastify from "fastify";
+import pino from 'pino';
 import path from "path";
-import { readFileSync } from "fs";
-import { MonokleValidator, Resource } from "@monokle/validation";
+import {readFileSync} from "fs";
+import {MonokleValidator, Resource} from "@monokle/validation";
 import {V1ValidatingWebhookConfiguration, V1ObjectMeta} from "@kubernetes/client-node";
 
 export type ValidationServerOptions = {
@@ -9,13 +10,13 @@ export type ValidationServerOptions = {
   host: string;
 };
 
-type AdmissionRequest = V1ValidatingWebhookConfiguration & {
+export type AdmissionRequest = V1ValidatingWebhookConfiguration & {
   request?: V1ObjectMeta & {
     object?: Resource
   }
-}
+};
 
-type AdmissionResponse = {
+export type AdmissionResponse = {
   kind: string,
   apiVersion: string,
   response: {
@@ -25,7 +26,7 @@ type AdmissionResponse = {
           message: string
       }
   }
-}
+};
 
 export class ValidationServer {
   private _server: ReturnType<typeof fastify>;
@@ -33,6 +34,7 @@ export class ValidationServer {
 
   constructor(
     private readonly _validator: MonokleValidator,
+    private readonly _logger: ReturnType<typeof pino>,
     private readonly _options: ValidationServerOptions = {
       port: 8443,
       host: '0.0.0.0'
@@ -66,7 +68,7 @@ export class ValidationServer {
           reject(err);
         }
 
-        console.log(`Server listening at ${address}`);
+        this._logger.info(`Server listening at ${address}`);
 
         this.shouldValidate = true;
 
@@ -85,8 +87,10 @@ export class ValidationServer {
   }
 
   private async _initRouting() {
-    this._server.post("/validate", async (req, res): Promise<AdmissionResponse> => {
-      console.log('request', req.headers, req.body)
+    this._server.post("/validate", async (req, _res): Promise<AdmissionResponse> => {
+
+      this._logger.debug({request: req})
+      this._logger.trace({requestBody: req.body});
 
       const body = req.body as AdmissionRequest;
 
@@ -104,7 +108,7 @@ export class ValidationServer {
 
       // Dev workaround - always return true for webhook server to not block hot-reload
       if (body.request?.name?.startsWith('webhook-server-')) {
-        console.log('Allowing webhook server to pass', response);
+        this._logger.debug({msg: 'Allowing webhook server to pass', response});
 
         return response;
       }
@@ -143,7 +147,8 @@ export class ValidationServer {
         response.response.status.message = message.join("");
       }
 
-      console.log('response', resourceForValidation, validationResponse, response);
+      this._logger.debug({response});
+      this._logger.trace({resourceForValidation, validationResponse});
 
       return response;
     });

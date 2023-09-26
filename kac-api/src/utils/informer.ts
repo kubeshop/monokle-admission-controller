@@ -1,16 +1,18 @@
 import k8s from '@kubernetes/client-node';
-import { Config } from '@monokle/validation';
+import {Config} from '@monokle/validation';
 
 export type MonoklePolicy = k8s.KubernetesObject & {
   spec: Config
 };
 
+const ERROR_RESTART_INTERVAL = 500;
+
 export async function getInformer(
   onAdded: k8s.ObjectCallback<MonoklePolicy>,
   onUpdated: k8s.ObjectCallback<MonoklePolicy>,
   onDeleted: k8s.ObjectCallback<MonoklePolicy>,
+  onError: k8s.ErrorCallback,
   namespace = 'default',
-  onError?: k8s.ErrorCallback
 ) {
   let informer: Awaited<ReturnType<typeof createInformer>> | null = null;
 
@@ -21,8 +23,11 @@ export async function getInformer(
       informer = await createInformer(onAdded, onUpdated, onDeleted, namespace, onError);
       return informer;
     } catch (err: any) {
-      console.error(`INFORMER:CREATION:ERROR, try ${tries}`, err.message, err.body);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (onError) {
+        onError(err);
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, ERROR_RESTART_INTERVAL));
     }
   }
 
@@ -54,7 +59,7 @@ async function createInformer(
 
     setTimeout(async () => {
       await informer.start();
-    }, 1000);
+    }, ERROR_RESTART_INTERVAL);
   });
 
   await informer.start();
