@@ -1,16 +1,13 @@
 import {AnnotationSuppressor, FingerprintSuppressor, MonokleValidator, RemotePluginLoader, SchemaLoader, DisabledFixer, ResourceParser} from "@monokle/validation";
 import { MonoklePolicy, getInformer } from "./utils/informer.js";
 import { ValidationServer } from "./utils/validation-server.js";
-
-// Refs:
-//
-// kube-client get current namespace where webhook is deployed
-// https://stackoverflow.com/a/46046153
-
-// const INITIAL_NAMESPACE = 'default';
-const INITIAL_NAMESPACE = 'webhook-demo';
+import { DEFAULT_NAMESPACE, getNamespace } from "./utils/helpers.js";
 
 (async() => {
+  const currentNamespace = getNamespace() || DEFAULT_NAMESPACE;
+
+  console.log(`Admission Controller namespace ${currentNamespace}`);
+
   // VALIDATOR
   let awaitValidatorReadiness = Promise.resolve();
 
@@ -46,7 +43,7 @@ const INITIAL_NAMESPACE = 'webhook-demo';
     console.log('ERROR:INFORMER', err);
   }
 
-  const informer = getInformer(onPolicy, onPolicy, onPolicyRemoval, INITIAL_NAMESPACE, onError);
+  const informer = getInformer(onPolicy, onPolicy, onPolicyRemoval, currentNamespace, onError);
 
   // SERVER
   const server = new ValidationServer(validator);
