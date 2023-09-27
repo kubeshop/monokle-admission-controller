@@ -33,7 +33,7 @@ export class ValidationServer {
   private _shouldValidate: boolean
 
   constructor(
-    private readonly _validator: MonokleValidator,
+    private readonly _validators: Map<string, MonokleValidator>,
     private readonly _logger: ReturnType<typeof pino>,
     private readonly _options: ValidationServerOptions = {
       port: 8443,
@@ -93,6 +93,7 @@ export class ValidationServer {
       this._logger.trace({requestBody: req.body});
 
       const body = req.body as AdmissionRequest;
+      const namespace = body.request?.namespace;
 
       const response = {
         kind: body?.kind || '',
@@ -106,6 +107,19 @@ export class ValidationServer {
         }
       }
 
+      if (!namespace) {
+        this._logger.error({msg: 'No namespace found', metadata: body.request});
+
+        return response;
+      }
+
+      const validator = this._validators.get(namespace);
+      if (!validator) {
+        this._logger.info({msg: 'No validator found for namespace', namespace});
+
+        return response;
+      }
+
       // @TODO should not be a part of production code
       // Dev workaround - always return true for webhook server to not block hot-reload
       if (body.request?.name?.startsWith('webhook-server-')) {
@@ -115,7 +129,7 @@ export class ValidationServer {
       }
 
       const resourceForValidation = this._createResourceForValidation(body);
-      const validationResponse = await this._validator.validate({ resources: [resourceForValidation] });
+      const validationResponse = await validator.validate({ resources: [resourceForValidation] });
 
       const warnings = [];
       const errors = [];

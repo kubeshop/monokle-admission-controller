@@ -11,8 +11,7 @@ export async function getInformer(
   onAdded: k8s.ObjectCallback<MonoklePolicy>,
   onUpdated: k8s.ObjectCallback<MonoklePolicy>,
   onDeleted: k8s.ObjectCallback<MonoklePolicy>,
-  onError: k8s.ErrorCallback,
-  namespace = 'default',
+  onError?: k8s.ErrorCallback,
 ) {
   let informer: Awaited<ReturnType<typeof createInformer>> | null = null;
 
@@ -20,7 +19,7 @@ export async function getInformer(
   while (!informer) {
     try {
       tries++;
-      informer = await createInformer(onAdded, onUpdated, onDeleted, namespace, onError);
+      informer = await createInformer(onAdded, onUpdated, onDeleted, onError);
       return informer;
     } catch (err: any) {
       if (onError) {
@@ -38,15 +37,14 @@ async function createInformer(
   onAdded: k8s.ObjectCallback<MonoklePolicy>,
   onUpdated: k8s.ObjectCallback<MonoklePolicy>,
   onDeleted: k8s.ObjectCallback<MonoklePolicy>,
-  namespace = 'default',
   onError?: k8s.ErrorCallback
 ) {
   const kc = new k8s.KubeConfig();
   kc.loadFromCluster();
 
   const k8sApi = kc.makeApiClient(k8s.CustomObjectsApi)
-  const listFn = () => k8sApi.listNamespacedCustomObject('monokle.com','v1', namespace, 'monoklepolicies');
-  const informer = k8s.makeInformer<MonoklePolicy>(kc, `/apis/monokle.com/v1/namespaces/${namespace}/monoklepolicies`, listFn as any);
+  const listFn = () => k8sApi.listClusterCustomObject('monokle.com','v1', 'policies');
+  const informer = k8s.makeInformer<MonoklePolicy>(kc, `/apis/monokle.com/v1/policies`, listFn as any);
 
   informer.on('add', async (obj) => await onAdded(obj));
   informer.on('update', async (obj) => await onUpdated(obj));
