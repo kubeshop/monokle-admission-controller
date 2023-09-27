@@ -49,7 +49,7 @@ NAME                                        DESIRED   CURRENT   READY   AGE
 replicaset.apps/webhook-server-677556956c   1         1         1       3m54s
 
 NAME                                                                        CREATED AT
-customresourcedefinition.apiextensions.k8s.io/monoklepolicies.monokle.com   2023-09-27T08:45:13Z
+customresourcedefinition.apiextensions.k8s.io/policies.monokle.com   2023-09-27T08:45:13Z
 
 NAME                                                                       WEBHOOKS   AGE
 validatingwebhookconfiguration.admissionregistration.k8s.io/demo-webhook   1          3m46s
@@ -59,7 +59,7 @@ For getting info about CRDs:
 
 ```bash
 kubectl get crd
-kubectl describe crd monoklepolicies.monokle.com
+kubectl describe crd policies.monokle.com
 
 kubectl get monoklepolicy -n webhook-demo
 kubectl describe monoklepolicy policy-sample -n webhook-demo
@@ -97,7 +97,7 @@ You can also do manual clean-up and re-run `./deploy.sh` script again:
 kubectl delete all -n webhook-demo --all && \
 kubectl delete validatingwebhookconfiguration.admissionregistration.k8s.io/demo-webhook -n webhook-demo && \
 kubectl delete namespace webhook-demo && \
-kubectl delete crd monoklepolicies.monokle.com
+kubectl delete crd policies.monokle.com
 ```
 
 ### Refs

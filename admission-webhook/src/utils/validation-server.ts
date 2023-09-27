@@ -106,6 +106,7 @@ export class ValidationServer {
         }
       }
 
+      // @TODO should not be a part of production code
       // Dev workaround - always return true for webhook server to not block hot-reload
       if (body.request?.name?.startsWith('webhook-server-')) {
         this._logger.debug({msg: 'Allowing webhook server to pass', response});
