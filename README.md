@@ -24,7 +24,7 @@ minikube start --uuid 00000000-0000-0000-0000-000000000001 --extra-config=apiser
 #### Deploying
 
 ```bash
-./deploy.sh
+./scripts/deploy.sh
 ```
 
 Every resource will be deployed to `webhook-demo` namespace, to watch it you can run:
@@ -70,7 +70,7 @@ kubectl describe monoklepolicy policy-sample -n webhook-demo
 First you need to create policy resource, for example:
 
 ```bash
-kubectl -n webhook-demo apply -f policy.yaml
+kubectl -n webhook-demo apply -f examples/policy-sample.yaml
 ```
 
 > Admission controller will still work without policy resource but then it will be like running validation with all plugins disabled.
@@ -86,7 +86,7 @@ kubectl -n webhook-demo create -f examples/pod-warning.yaml
 After everything is running you can allow hot-reload by running:
 
 ```bash
-skaffold dev
+skaffold dev -f k8s/skaffold.yaml
 ```
 
 **Important**: Skaffold will recreate deployment on every change so make sure that webhook pod doesn't get rejected by it's previous version (via Validation Admission Controller).

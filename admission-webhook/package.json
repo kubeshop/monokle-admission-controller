@@ -1,5 +1,5 @@
 {
-  "name": "kac2",
+  "name": "admission-webhook",
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
