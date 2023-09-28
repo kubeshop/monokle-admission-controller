@@ -50,7 +50,8 @@ cp "${templdir}/deployment.yaml.template" "${resdir}/deployment.yaml"
 skaffold run -n webhook-demo -f k8s/skaffold.yaml
 # kubectl apply -f deployment.yaml
 sleep 2
-kubectl apply -f "${resdir}/crd.yaml"
+kubectl apply -f "${resdir}/monokle-policy-crd.yaml"
+kubectl apply -f "${resdir}/monokle-policy-binding-crd.yaml"
 kubectl apply -f "${resdir}/service-account.yaml"
 kubectl apply -f "${resdir}/webhook.yaml"
 

@@ -5,7 +5,7 @@ metadata:
 spec:
   group: monokle.com
   versions:
-    - name: v1
+    - name: v1alpha1
       served: true
       storage: true
       schema:
@@ -37,7 +37,7 @@ spec:
                     type: object
                     additionalProperties:
                       type: string
-  scope: Namespaced
+  scope: Cluster
   names:
     plural: policies
     singular: policy
