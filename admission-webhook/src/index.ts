@@ -1,7 +1,8 @@
 import pino from 'pino';
-import {AnnotationSuppressor, FingerprintSuppressor, MonokleValidator, RemotePluginLoader, SchemaLoader, DisabledFixer, ResourceParser} from '@monokle/validation';
 import {getInformer} from './utils/get-informer.js';
 import {MonoklePolicy, MonoklePolicyBinding, PolicyManager} from './utils/policy-manager.js';
+import {ValidatorManager} from './utils/validator-manager.js';
+import {ValidationServer} from './utils/validation-server.js';
 
 const logger = pino({
   name: 'Monokle',
@@ -28,56 +29,11 @@ const logger = pino({
   );
 
   const policyManager = new PolicyManager(policyInformer, bindingsInformer, logger);
+  const validatorManager = new ValidatorManager(policyManager);
 
-  // POLICY MANAGER
+  await policyManager.start();
 
-  // // INFORMER
-  // const onPolicy = async (policy: MonoklePolicy) => {
-  //   logger.info({msg: 'Informer: Policy updated', policy});
+  const server = new ValidationServer(validatorManager, logger);
 
-  //   const policyNamespace = policy.metadata?.namespace;
-  //   if (!policyNamespace) {
-  //     logger.error({msg: 'Informer: Policy namespace is empty', metadata: policy.metadata});
-  //     return;
-  //   }
-
-  //   policies.set(policyNamespace, policy.spec);
-
-  //   if (!validators.has(policyNamespace)) {
-  //     validators.set(
-  //       policyNamespace,
-  //       new MonokleValidator(
-  //         {
-  //           loader: new RemotePluginLoader(),
-  //           parser: new ResourceParser(),
-  //           schemaLoader: new SchemaLoader(),
-  //           suppressors: [new AnnotationSuppressor(), new FingerprintSuppressor()],
-  //           fixer: new DisabledFixer(),
-  //         },
-  //         {}
-  //       )
-  //     );
-  //   }
-
-  //   await validators.get(policyNamespace)!.preload(policy.spec);
-  // }
-
-  // const onPolicyRemoval = async (policy: MonoklePolicy) => {
-  //   logger.info('Informer: Policy removed');
-
-  //   const policyNamespace = policy.metadata?.namespace;
-  //   if (!policyNamespace) {
-  //     logger.error({msg: 'Informer: Policy namespace is empty', metadata: policy.metadata});
-  //     return;
-  //   }
-
-  //   policies.delete(policyNamespace);
-  //   validators.delete(policyNamespace);
-  // }
-
-
-  // // SERVER
-  // const server = new ValidationServer(validators, logger);
-
-  // await server.start();
+  await server.start();
 })();

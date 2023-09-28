@@ -2,8 +2,9 @@ import fastify from "fastify";
 import pino from 'pino';
 import path from "path";
 import {readFileSync} from "fs";
-import {MonokleValidator, Resource} from "@monokle/validation";
+import {Resource} from "@monokle/validation";
 import {V1ValidatingWebhookConfiguration, V1ObjectMeta} from "@kubernetes/client-node";
+import {ValidatorManager} from "./validator-manager";
 
 export type ValidationServerOptions = {
   port: number;
@@ -33,7 +34,7 @@ export class ValidationServer {
   private _shouldValidate: boolean
 
   constructor(
-    private readonly _validators: Map<string, MonokleValidator>,
+    private readonly _validators: ValidatorManager,
     private readonly _logger: ReturnType<typeof pino>,
     private readonly _options: ValidationServerOptions = {
       port: 8443,
@@ -113,10 +114,8 @@ export class ValidationServer {
         return response;
       }
 
-      const validator = this._validators.get(namespace);
-      if (!validator) {
-        this._logger.info({msg: 'No validator found for namespace', namespace});
-
+      const validators = this._validators.getMatchingValidators();
+      if (validators.length === 0) {
         return response;
       }
 
@@ -129,7 +128,8 @@ export class ValidationServer {
       }
 
       const resourceForValidation = this._createResourceForValidation(body);
-      const validationResponse = await validator.validate({ resources: [resourceForValidation] });
+      // @TODO iterate over validators and run them all
+      const validationResponse = await validators[0].validate({ resources: [resourceForValidation] });
 
       const warnings = [];
       const errors = [];
