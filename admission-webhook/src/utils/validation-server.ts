@@ -128,17 +128,27 @@ export class ValidationServer {
       }
 
       const resourceForValidation = this._createResourceForValidation(body);
-      // @TODO iterate over validators and run them all
-      const validationResponse = await validators[0].validate({ resources: [resourceForValidation] });
+      const validationResponses = await Promise.all(validators.map(async (validator) => {
+        return {
+          result: await validator.validator.validate({ resources: [resourceForValidation] }),
+          policy: validator.policy
+        };
+        }
+      ));
+
+      // @TODO each result may have different `validationActions` (defined in bindings) so it should be handled
+      // it can by be grouping results by action and then  performing action for each group
 
       const warnings = [];
       const errors = [];
-      for (const result of validationResponse.runs) {
-        for (const item of result.results) {
-          if (item.level === "warning") {
-            warnings.push(item);
-          } else if (item.level === "error") {
-            errors.push(item);
+      for (const validationResponse of validationResponses) {
+        for (const result of validationResponse.result.runs) {
+          for (const item of result.results) {
+            if (item.level === "warning") {
+              warnings.push(item);
+            } else if (item.level === "error") {
+              errors.push(item);
+            }
           }
         }
       }
@@ -163,7 +173,7 @@ export class ValidationServer {
       }
 
       this._logger.debug({response});
-      this._logger.trace({resourceForValidation, validationResponse});
+      this._logger.trace({resourceForValidation, validationResponses});
 
       return response;
     });

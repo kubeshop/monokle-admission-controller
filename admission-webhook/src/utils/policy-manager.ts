@@ -1,17 +1,24 @@
 import pino from 'pino';
 import {KubernetesObject} from '@kubernetes/client-node';
 import {Config} from '@monokle/validation';
-import {Informer} from './get-informer';
+import {InformerWrapper} from './get-informer';
 
 export type MonoklePolicy = KubernetesObject & {
   spec: Config
 }
 
+export type MonoklePolicyBindingConfiguration = {
+  policyName: string
+  validationActions: ['Warn']
+}
+
 export type MonoklePolicyBinding = KubernetesObject & {
-  spec: {
-    policyName: string
-    validationActions: 'Warn'
-  }
+  spec: MonoklePolicyBindingConfiguration
+}
+
+export type MonokleApplicablePolicy = {
+  policy: Config,
+  binding: MonoklePolicyBindingConfiguration
 }
 
 export class PolicyManager {
@@ -19,17 +26,18 @@ export class PolicyManager {
   private _bindings = new Map<string, MonoklePolicyBinding>(); // Map<bindingName, binding> // @TODO use policyName as key instead of bindingName?
 
   constructor(
-    private readonly _policyInformer: Informer<MonoklePolicy>,
-    private readonly _bindingInformer: Informer<MonoklePolicyBinding>,
+    private readonly _policyInformer: InformerWrapper<MonoklePolicy>,
+    private readonly _bindingInformer: InformerWrapper<MonoklePolicyBinding>,
+    private readonly _ignoreNamespaces: string[],
     private readonly _logger: ReturnType<typeof pino>,
   ) {
-    this._policyInformer.on('add', this.onPolicy);
-    this._policyInformer.on('update', this.onPolicy);
-    this._policyInformer.on('delete', this.onPolicyRemoval);
+    this._policyInformer.informer.on('add', this.onPolicy.bind(this));
+    this._policyInformer.informer.on('update', this.onPolicy.bind(this));
+    this._policyInformer.informer.on('delete', this.onPolicyRemoval.bind(this));
 
-    this._bindingInformer.on('add', this.onBinding);
-    this._bindingInformer.on('update', this.onBinding);
-    this._bindingInformer.on('delete', this.onBindingRemoval);
+    this._bindingInformer.informer.on('add', this.onBinding.bind(this));
+    this._bindingInformer.informer.on('update', this.onBinding.bind(this));
+    this._bindingInformer.informer.on('delete', this.onBindingRemoval.bind(this));
   }
 
   async start() {
@@ -37,20 +45,26 @@ export class PolicyManager {
     await this._bindingInformer.start();
   }
 
-  getMatchingPolicies() { // @TODO pass resource data so it can be matched according to matchResources definition (when it's implemented)
+  getMatchingPolicies(): MonokleApplicablePolicy[] { // @TODO pass resource data so it can be matched according to matchResources definition (when it's implemented)
     if (this._bindings.size === 0) {
       return [];
     }
 
-    return Array.from(this._bindings.values()).map((binding) => {
-      const policy = this._policies.get(binding.spec.policyName);
+    return Array.from(this._bindings.values())
+      .map((binding) => {
+        const policy = this._policies.get(binding.spec.policyName);
 
-      if (!policy) {
-        this._logger.error({msg: 'Binding is pointing to missing policy', binding});
-      }
+        if (!policy) {
+          this._logger.error({msg: 'Binding is pointing to missing policy', binding});
+          return null;
+        }
 
-      return policy;
-    }).filter((policy) => policy !== undefined);
+        return {
+          policy: policy.spec,
+          binding: binding.spec
+        }
+      })
+      .filter((policy) => policy !== null) as MonokleApplicablePolicy[];
   }
 
   private onPolicy(policy: MonoklePolicy) {

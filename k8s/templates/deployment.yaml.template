@@ -29,10 +29,16 @@ spec:
         - name: webhook-tls-certs
           mountPath: /run/secrets/tls
           readOnly: true
+        env:
+          - name: MONOKLE_LOG_LEVEL
+            value: DEBUG
+          - name: MONOKLE_IGNORE_NAMESPACES
+            value: 'kube-node-lease,kube-public,kube-system'
       volumes:
       - name: webhook-tls-certs
         secret:
           secretName: webhook-server-tls
+      serviceAccountName: monokle-policies
 ---
 apiVersion: v1
 kind: Service

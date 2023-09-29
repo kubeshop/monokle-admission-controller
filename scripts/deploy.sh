@@ -47,12 +47,19 @@ ca_pem_b64="$(openssl base64 -A <"${keydir}/ca.crt")"
 sed -e 's@${CA_PEM_B64}@'"$ca_pem_b64"'@g' <"${templdir}/webhook.yaml.template" > "${resdir}/webhook.yaml"
 cp "${templdir}/deployment.yaml.template" "${resdir}/deployment.yaml"
 
+# Cluster-wide
+kubectl apply -f "${resdir}/monokle-policy-crd.yaml"
+kubectl apply -f "${resdir}/monokle-policy-binding-crd.yaml"
+
+# Namespaced
+kubectl apply -f "${resdir}/service-account.yaml" -n webhook-demo
+
 skaffold run -n webhook-demo -f k8s/skaffold.yaml
 # kubectl apply -f deployment.yaml
 sleep 2
-kubectl apply -f "${resdir}/monokle-policy-crd.yaml"
-kubectl apply -f "${resdir}/monokle-policy-binding-crd.yaml"
-kubectl apply -f "${resdir}/service-account.yaml"
+# kubectl apply -f "${resdir}/monokle-policy-crd.yaml"
+# kubectl apply -f "${resdir}/monokle-policy-binding-crd.yaml"
+# kubectl apply -f "${resdir}/service-account.yaml"
 kubectl apply -f "${resdir}/webhook.yaml"
 
 # Delete the key directory to prevent abuse (DO NOT USE THESE KEYS ANYWHERE ELSE).

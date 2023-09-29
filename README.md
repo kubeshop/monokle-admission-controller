@@ -97,7 +97,8 @@ You can also do manual clean-up and re-run `./deploy.sh` script again:
 kubectl delete all -n webhook-demo --all && \
 kubectl delete validatingwebhookconfiguration.admissionregistration.k8s.io/demo-webhook -n webhook-demo && \
 kubectl delete namespace webhook-demo && \
-kubectl delete crd policies.monokle.com
+kubectl delete crd policies.monokle.com && \
+kubectl delete crd policybindings.monokle.com
 ```
 
 ### Refs
