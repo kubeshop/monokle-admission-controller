@@ -71,6 +71,7 @@ First you need to create policy resource, for example:
 
 ```bash
 kubectl -n webhook-demo apply -f examples/policy-sample.yaml
+kubectl -n webhook-demo apply -f examples/policy-binding-sample.yaml
 ```
 
 > Admission controller will still work without policy resource but then it will be like running validation with all plugins disabled.

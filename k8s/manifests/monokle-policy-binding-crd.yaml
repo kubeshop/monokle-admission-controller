@@ -18,8 +18,10 @@ spec:
                 policyName:
                   type: string
                 validationActions:
-                  type: string
-                  enum: [Warn]
+                  type: array
+                  items:
+                    type: string
+                    enum: [Warn]
   scope: Cluster
   names:
     plural: policybindings
