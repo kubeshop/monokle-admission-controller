@@ -1,7 +1,7 @@
 apiVersion: monokle.com/v1alpha1
 kind: MonoklePolicy
 metadata:
-  name: policy-sample
+  name: policy-sample-1
 spec:
   plugins:
     yaml-syntax: true

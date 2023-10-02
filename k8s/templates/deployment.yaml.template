@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: webhook-server
-  namespace: webhook-demo
+  namespace: monokle-admission-controller
   labels:
     app: webhook-server
 spec:
@@ -15,9 +15,9 @@ spec:
       labels:
         app: webhook-server
     spec:
-      #securityContext:
+      # securityContext:
       #  runAsNonRoot: true
-      #  runAsUser: 1234
+      #  runAsUser: 1000
       containers:
       - name: server
         image: admission-webhook
@@ -33,7 +33,7 @@ spec:
           - name: MONOKLE_LOG_LEVEL
             value: DEBUG
           - name: MONOKLE_IGNORE_NAMESPACES
-            value: 'kube-node-lease,kube-public,kube-system'
+            value: 'kube-node-lease,kube-public,kube-system,monokle-admission-controller'
       volumes:
       - name: webhook-tls-certs
         secret:
@@ -44,7 +44,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: webhook-server
-  namespace: webhook-demo
+  namespace: monokle-admission-controller
 spec:
   selector:
     app: webhook-server

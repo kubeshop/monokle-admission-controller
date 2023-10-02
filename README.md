@@ -27,32 +27,33 @@ minikube start --uuid 00000000-0000-0000-0000-000000000001 --extra-config=apiser
 ./scripts/deploy.sh
 ```
 
-Every resource will be deployed to `webhook-demo` namespace, to watch it you can run:
+Namespaced resources (webhook server) will be deployed to dedicated `monokle-admission-controller` namespace, to watch it you can run:
 
 ```bash
-watch kubectl -n webhook-demo get all,CustomResourceDefinition,ValidatingWebhookConfiguration,MutatingWebhookConfiguration
+watch kubectl -n monokle-admission-controller get all,CustomResourceDefinition,ValidatingWebhookConfiguration,MutatingWebhookConfiguration
 ```
 
 After it runs, the result should be something like:
 
 ```bash
-NAME                                  READY   STATUS    RESTARTS   AGE
-pod/webhook-server-677556956c-f7hcq   1/1     Running   0          3m54s
+NAME                                  READY   STATUS   RESTARTS      AGE
+pod/webhook-server-7cd54c9fcf-wdkdn   0/1     Error    1 (13s ago)   25s
 
 NAME                     TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
-service/webhook-server   ClusterIP   10.105.249.5   <none>        443/TCP   3m54s
+service/webhook-server   ClusterIP   10.97.66.194   <none>        443/TCP   25s
 
 NAME                             READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/webhook-server   1/1     1            1           3m54s
+deployment.apps/webhook-server   0/1     1            0           25s
 
 NAME                                        DESIRED   CURRENT   READY   AGE
-replicaset.apps/webhook-server-677556956c   1         1         1       3m54s
+replicaset.apps/webhook-server-7cd54c9fcf   1         1         0       25s
 
-NAME                                                                        CREATED AT
-customresourcedefinition.apiextensions.k8s.io/policies.monokle.com   2023-09-27T08:45:13Z
+NAME                                                                       CREATED AT
+customresourcedefinition.apiextensions.k8s.io/policies.monokle.com         2023-10-02T12:17:02Z
+customresourcedefinition.apiextensions.k8s.io/policybindings.monokle.com   2023-10-02T12:17:02Z
 
 NAME                                                                       WEBHOOKS   AGE
-validatingwebhookconfiguration.admissionregistration.k8s.io/demo-webhook   1          3m46s
+validatingwebhookconfiguration.admissionregistration.k8s.io/demo-webhook   1          17s
 ```
 
 For getting info about CRDs:
@@ -68,15 +69,16 @@ kubectl describe crd policybindings.monokle.com
 First you need to create policy resource, for example:
 
 ```bash
-kubectl apply -f examples/policy-sample.yaml
+kubectl apply -f examples/policy-sample-1.yaml
 kubectl apply -f examples/policy-sample-2.yaml
 ```
 
 Then it needs to be bind to be used for validation. Either without scope (globally to all, but ignored namespaces) or with `matchResource` field:
 
 ```bash
-kubectl apply -f examples/policy-binding-sample.yaml
-kubectl apply -f examples/policy-binding-scoped-sample.yaml
+kubectl apply -f examples/policy-binding-sample-1.yaml
+kubectl apply -f examples/policy-binding-sample-2.yaml
+kubectl apply -f examples/policy-binding-sample-3.yaml
 ```
 
 You can inspect deployed policies with:
@@ -110,9 +112,11 @@ skaffold dev -f k8s/skaffold.yaml
 You can also do manual clean-up and re-run `./deploy.sh` script again:
 
 ```bash
-kubectl delete all -n webhook-demo --all && \
-kubectl delete validatingwebhookconfiguration.admissionregistration.k8s.io/demo-webhook -n webhook-demo && \
-kubectl delete namespace webhook-demo && \
+kubectl delete all -n monokle-admission-controller --all && \
+kubectl delete validatingwebhookconfiguration.admissionregistration.k8s.io/demo-webhook -n monokle-admission-controller && \
+kubectl delete namespace monokle-admission-controller && \
+kubectl delete namespace nstest1 && \
+kubectl delete namespace nstest2 && \
 kubectl delete crd policies.monokle.com && \
 kubectl delete crd policybindings.monokle.com
 ```

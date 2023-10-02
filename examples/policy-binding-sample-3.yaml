@@ -1,11 +1,11 @@
 apiVersion: monokle.com/v1alpha1
 kind: MonoklePolicyBinding
 metadata:
-  name: policy-binding-scoped-sample
+  name: policy-binding-sample-3
 spec:
   policyName: "policy-sample-2"
   validationActions: [Warn]
   matchResources:
     namespaceSelector:
       matchLabels:
-        namespace: default
+        namespace: nstest1

@@ -139,14 +139,6 @@ export class ValidationServer {
         return response;
       }
 
-      // @TODO should not be a part of production code
-      // Dev workaround - always return true for webhook server to not block hot-reload
-      if (body.request?.name?.startsWith('webhook-server-')) {
-        this._logger.debug({msg: 'Allowing webhook server to pass', response});
-
-        return response;
-      }
-
       const resourceForValidation = this._createResourceForValidation(body);
       const validationResponses = await Promise.all(validators.map(async (validator) => {
         return {
