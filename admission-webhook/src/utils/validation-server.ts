@@ -2,13 +2,13 @@ import fastify from "fastify";
 import pino from 'pino';
 import path from "path";
 import {readFileSync} from "fs";
-import {Resource} from "@monokle/validation";
+import {Message, Resource, RuleLevel} from "@monokle/validation";
 import {V1ObjectMeta} from "@kubernetes/client-node";
 import {ValidatorManager} from "./validator-manager";
 
 export type ValidationServerOptions = {
-  port: number;
-  host: string;
+  port: number
+  host: string
 };
 
 export type AdmissionRequestObject = {
@@ -30,17 +30,28 @@ export type AdmissionRequest = {
   }
 };
 
+// See
+// https://pkg.go.dev/k8s.io/api/admission/v1#AdmissionResponse
+// https://kubernetes.io/docs/reference/config-api/apiserver-admission.v1/#admission-k8s-io-v1-AdmissionReview
 export type AdmissionResponse = {
-  kind: string,
-  apiVersion: string,
+  kind: string
+  apiVersion: string
   response: {
-      uid: string,
-      allowed: boolean,
+      uid: string
+      allowed: boolean
+      warnings?: string[]
       status: {
           message: string
       }
   }
 };
+
+export type Violation = {
+  ruleId: string
+  message: Message
+  level?: RuleLevel
+  actions: string[]
+}
 
 export class ValidationServer {
   private _server: ReturnType<typeof fastify>;
@@ -150,46 +161,42 @@ export class ValidationServer {
         }
       ));
 
-      // @TODO each result may have different `validationActions` (defined in bindings) so it should be handled
-      // it can by be grouping results by action and then  performing action for each group
-
-      const warnings = [];
-      const errors = [];
+      const violations: Violation[] = [];
       for (const validationResponse of validationResponses) {
+        const actions = validationResponse.policy.binding.validationActions;
+
         for (const result of validationResponse.result.runs) {
           for (const item of result.results) {
-            if (item.level === "warning") {
-              warnings.push(item);
-            } else if (item.level === "error") {
-              errors.push(item);
-            }
+            violations.push({
+              ruleId: item.ruleId,
+              message: item.message,
+              level: item.level,
+              actions: actions
+            });
           }
         }
       }
 
-      if (errors.length > 0 || warnings.length > 0) {
-        const warningsList = warnings.map((e) => `${e.ruleId}: ${e.message.text}`).join("\n");
-        const errorsList = errors.map((e) => `${e.ruleId}: ${e.message.text}`).join("\n");
-        const message = [];
+      const violationsByAction = violations.reduce((acc: Record<string, Violation[]>, violation: Violation) => {
+        const actions = violation.actions;
 
-        if (errors.length > 0) {
-          message.push(`\n${errors.length} errors found:\n${errorsList}\n`);
+        for (const action of actions) {
+          if (!acc[action]) {
+            acc[action] = [];
+          }
+
+          acc[action].push(violation);
         }
 
-        if (warnings.length > 0) {
-          message.push(`\n${warnings.length} warnings found:\n${warningsList}\n`);
-        }
+        return acc;
+      }, {});
 
-        message.push("\nYou can use Monokle (https://monokle.io/) to validate and fix those errors easily!");
-
-        response.response.allowed = false;
-        response.response.status.message = message.join("");
-      }
+      const responseFull = this._handleViolationsByAction(violationsByAction, response);
 
       this._logger.debug({response});
       this._logger.trace({resourceForValidation, validationResponses});
 
-      return response;
+      return responseFull;
     });
   }
 
@@ -208,5 +215,36 @@ export class ValidationServer {
     };
 
     return resource;
+  }
+
+  private _handleViolationsByAction(violationsByAction: Record<string, Violation[]>, response: AdmissionResponse) {
+    for (const action of Object.keys(violationsByAction)) {
+      // 'Warn' action shouldbe mapped to warnings, see:
+      // - https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/#validation-actions
+      // - https://kubernetes.io/blog/2020/09/03/warnings/
+      if (action.toLowerCase() === 'warn') {
+        response = this._handleViolationsAsWarn(violationsByAction[action], response);
+      }
+    }
+
+    return response;
+  }
+
+  private _handleViolationsAsWarn(violations: Violation[], response: AdmissionResponse) {
+    const warnings = violations.filter((v) => v.level === 'warning').map((e) => `${e.ruleId}: ${e.message.text}`);
+    const errors = violations.filter((v) => v.level === 'error').map((e) => `${e.ruleId}: ${e.message.text}`);
+
+    if (errors.length > 0 || warnings.length > 0) {
+      response.response.warnings = [
+        `Monokle Admission Controller found:`,
+        `Errors: ${errors.length}`,
+        ...errors,
+        `Warnings: ${warnings.length}`,
+        ...warnings,
+        "You can use Monokle (https://monokle.io/) to validate and fix those errors easily!"
+      ];
+    }
+
+    return response;
   }
 }

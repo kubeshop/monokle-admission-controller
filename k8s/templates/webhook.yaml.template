@@ -16,5 +16,5 @@ webhooks:
       - operations: ["CREATE", "UPDATE"]
         apiGroups: ["*"]
         apiVersions: ["*"]
-        resources: ["*"]
+        resources: ["pods"]
         scope: "Namespaced"
