@@ -35,7 +35,6 @@ export class PolicyManager extends EventEmitter{
   constructor(
     private readonly _policyInformer: InformerWrapper<MonoklePolicy>,
     private readonly _bindingInformer: InformerWrapper<MonoklePolicyBinding>,
-    private readonly _ignoreNamespaces: string[],
     private readonly _logger: ReturnType<typeof pino>,
   ) {
     super();
@@ -58,10 +57,6 @@ export class PolicyManager extends EventEmitter{
     this._logger.debug({policies: this._policies.size, bindings: this._bindings.size});
 
     if (this._bindings.size === 0) {
-      return [];
-    }
-
-    if (this._ignoreNamespaces.includes(namespace)) {
       return [];
     }
 

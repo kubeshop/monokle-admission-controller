@@ -31,12 +31,12 @@ const logger = pino({
     }
   );
 
-  const policyManager = new PolicyManager(policyInformer, bindingsInformer, IGNORED_NAMESPACES, logger);
+  const policyManager = new PolicyManager(policyInformer, bindingsInformer, logger);
   const validatorManager = new ValidatorManager(policyManager, logger);
 
   await policyManager.start();
 
-  const server = new ValidationServer(validatorManager, logger);
+  const server = new ValidationServer(validatorManager, IGNORED_NAMESPACES, logger);
 
   await server.start();
 })();

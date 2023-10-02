@@ -48,6 +48,7 @@ export class ValidationServer {
 
   constructor(
     private readonly _validators: ValidatorManager,
+    private readonly _ignoredNamespaces: string[],
     private readonly _logger: ReturnType<typeof pino>,
     private readonly _options: ValidationServerOptions = {
       port: 8443,
@@ -102,7 +103,6 @@ export class ValidationServer {
   private async _initRouting() {
     this._server.post("/validate", async (req, _res): Promise<AdmissionResponse> => {
 
-      this._logger.debug({request: req})
       this._logger.trace({requestBody: req.body});
 
       const body = req.body as AdmissionRequest;
@@ -120,8 +120,8 @@ export class ValidationServer {
         }
       }
 
-      if (!namespace) {
-        this._logger.error({msg: 'No namespace found', metadata: body.request});
+      if (!namespace || this._ignoredNamespaces.includes(namespace)) {
+        this._logger.error({msg: 'No namespace found or namespace ignored', namespace});
         return response;
       }
 
@@ -130,6 +130,8 @@ export class ValidationServer {
         this._logger.error({msg: 'No resource found', metadata: body.request});
         return response;
       }
+
+      this._logger.debug({request: req});
 
       const validators = this._validators.getMatchingValidators(resource, namespace);
 
