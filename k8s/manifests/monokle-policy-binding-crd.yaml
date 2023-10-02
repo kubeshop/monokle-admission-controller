@@ -22,6 +22,16 @@ spec:
                   items:
                     type: string
                     enum: [Warn]
+                matchResources:
+                  type: object
+                  properties:
+                    namespaceSelector:
+                      type: object
+                      properties:
+                        matchLabels:
+                          type: object
+                          additionalProperties:
+                            type: string
   scope: Cluster
   names:
     plural: policybindings

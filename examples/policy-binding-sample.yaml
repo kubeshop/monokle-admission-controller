@@ -1,7 +1,7 @@
 apiVersion: monokle.com/v1alpha1
 kind: MonoklePolicyBinding
 metadata:
-  name: policy-sample-binding
+  name: policy-binding-sample
 spec:
   policyName: "policy-sample"
   validationActions: [Warn]

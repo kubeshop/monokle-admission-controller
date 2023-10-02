@@ -3,7 +3,7 @@ import pino from 'pino';
 import path from "path";
 import {readFileSync} from "fs";
 import {Resource} from "@monokle/validation";
-import {V1ValidatingWebhookConfiguration, V1ObjectMeta} from "@kubernetes/client-node";
+import {V1ObjectMeta} from "@kubernetes/client-node";
 import {ValidatorManager} from "./validator-manager";
 
 export type ValidationServerOptions = {
@@ -11,9 +11,22 @@ export type ValidationServerOptions = {
   host: string;
 };
 
-export type AdmissionRequest = V1ValidatingWebhookConfiguration & {
-  request?: V1ObjectMeta & {
-    object?: Resource
+export type AdmissionRequestObject = {
+  apiVersion: string
+  kind: string
+  metadata: V1ObjectMeta
+  spec: any
+  status: any
+};
+
+export type AdmissionRequest = {
+  apiVersion: string
+  kind: string
+  request: {
+    name: string
+    namespace: string
+    uid: string
+    object: AdmissionRequestObject
   }
 };
 
@@ -44,7 +57,6 @@ export class ValidationServer {
     this._shouldValidate = false;
 
     this._server = fastify({
-      // @TODO do not require certs when running locally (for testing outside K8s cluster)
       https: {
         key: readFileSync(path.join('/run/secrets/tls', 'tls.key')),
         cert: readFileSync(path.join('/run/secrets/tls', 'tls.crt'))
@@ -110,11 +122,19 @@ export class ValidationServer {
 
       if (!namespace) {
         this._logger.error({msg: 'No namespace found', metadata: body.request});
-
         return response;
       }
 
-      const validators = this._validators.getMatchingValidators();
+      const resource = body.request?.object;
+      if (!resource) {
+        this._logger.error({msg: 'No resource found', metadata: body.request});
+        return response;
+      }
+
+      const validators = this._validators.getMatchingValidators(resource, namespace);
+
+      this._logger.debug({msg: 'Matching validators', count: validators.length});
+
       if (validators.length === 0) {
         return response;
       }

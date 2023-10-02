@@ -60,9 +60,7 @@ For getting info about CRDs:
 ```bash
 kubectl get crd
 kubectl describe crd policies.monokle.com
-
-kubectl get monoklepolicy -n webhook-demo
-kubectl describe monoklepolicy policy-sample -n webhook-demo
+kubectl describe crd policybindings.monokle.com
 ```
 
 #### Testing
@@ -70,16 +68,33 @@ kubectl describe monoklepolicy policy-sample -n webhook-demo
 First you need to create policy resource, for example:
 
 ```bash
-kubectl -n webhook-demo apply -f examples/policy-sample.yaml
-kubectl -n webhook-demo apply -f examples/policy-binding-sample.yaml
+kubectl apply -f examples/policy-sample.yaml
+kubectl apply -f examples/policy-sample-2.yaml
 ```
 
-> Admission controller will still work without policy resource but then it will be like running validation with all plugins disabled.
+Then it needs to be bind to be used for validation. Either without scope (globally to all, but ignored namespaces) or with `matchResource` field:
+
+```bash
+kubectl apply -f examples/policy-binding-sample.yaml
+kubectl apply -f examples/policy-binding-scoped-sample.yaml
+```
+
+You can inspect deployed policies with:
+
+```bash
+kubectl get policy
+kubectl describe policy
+
+kubectl get policybinding
+kubectl describe policybinding
+```
 
 Then you can try to create sample resource and see webhook response:
 
 ```bash
-kubectl -n webhook-demo create -f examples/pod-warning.yaml
+kubectl apply -f examples/pod-valid.yaml
+kubectl apply -f examples/pod-warning.yaml
+kubectl apply -f examples/pod-errors.yaml
 ```
 
 #### Iterating

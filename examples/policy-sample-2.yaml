@@ -1,0 +1,8 @@
+apiVersion: monokle.com/v1alpha1
+kind: MonoklePolicy
+metadata:
+  name: policy-sample-2
+spec:
+  plugins:
+    open-policy-agent: true
+    pod-security-standards: true

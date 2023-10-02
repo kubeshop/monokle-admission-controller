@@ -1,5 +1,7 @@
+import pino from 'pino';
 import {AnnotationSuppressor, Config, DisabledFixer, FingerprintSuppressor, MonokleValidator, RemotePluginLoader, ResourceParser, SchemaLoader} from "@monokle/validation";
-import {MonokleApplicablePolicy, PolicyManager} from "./policy-manager";
+import {MonokleApplicablePolicy, MonoklePolicy, PolicyManager} from "./policy-manager";
+import {AdmissionRequestObject} from './validation-server';
 
 export type MonokleApplicableValidator = {
   validator: MonokleValidator,
@@ -11,14 +13,19 @@ export class ValidatorManager {
 
   constructor(
     private readonly _policyManager: PolicyManager,
+    private readonly _logger: ReturnType<typeof pino>,
   ) {
-    // @TODO implement this._policyManager.on(policyUpdated, this._reloadValidator)
-    // We should preload configuration here instead of in getMatchingValidators since
-    // it would affect performance of the admission webhook response time
+    this._policyManager.on('policyUpdated', async (policy: MonoklePolicy) => {
+      await this.setupValidator(policy.metadata!.name!, policy.spec);
+    });
+
+    this._policyManager.on('policyRemoved', async (policy: MonoklePolicy) => {
+      await this._validators.delete(policy.metadata!.name!);
+    });
   }
 
-  getMatchingValidators(): MonokleApplicableValidator[] {
-    const matchingPolicies = this._policyManager.getMatchingPolicies();
+  getMatchingValidators(resource: AdmissionRequestObject, namespace: string): MonokleApplicableValidator[] {
+    const matchingPolicies = this._policyManager.getMatchingPolicies(resource, namespace);
 
     if (matchingPolicies.length === 0) {
       return [];
@@ -26,19 +33,22 @@ export class ValidatorManager {
 
     return matchingPolicies.map((policy) => {
       if (!this._validators.has(policy.binding.policyName)) {
-        this.setupValidator(policy.binding.policyName, policy.policy);
+        // This should not happen and means there is a bug in other place in the code. Raise warning and skip.
+        // Do not create validator instance here to keep this function sync and to keep processing time low.
+        this._logger.warn({msg: 'ValidatorManager: Validator not found', policyName: policy.binding.policyName});
+        return null;
       }
 
       return {
         validator: this._validators.get(policy.binding.policyName)!,
         policy
       }
-    });
+    }).filter((validator) => validator !== null) as MonokleApplicableValidator[];
   }
 
   private async setupValidator(policyName: string, policy: Config) {
     if (this._validators.has(policyName)) {
-      this._validators.get(policyName)!.preload(policy);
+      await this._validators.get(policyName)!.preload(policy);
     } else {
       const validator = new MonokleValidator(
         {
@@ -47,9 +57,12 @@ export class ValidatorManager {
           schemaLoader: new SchemaLoader(),
           suppressors: [new AnnotationSuppressor(), new FingerprintSuppressor()],
           fixer: new DisabledFixer(),
-        },
-        policy
+        }
       );
+
+      // Run separately (instead of passing config to constructor) to make sure that validator
+      // is ready when 'setupValidator' function call fulfills.
+      await validator.preload(policy);
 
       this._validators.set(policyName, validator);
     }

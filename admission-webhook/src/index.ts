@@ -32,7 +32,7 @@ const logger = pino({
   );
 
   const policyManager = new PolicyManager(policyInformer, bindingsInformer, IGNORED_NAMESPACES, logger);
-  const validatorManager = new ValidatorManager(policyManager);
+  const validatorManager = new ValidatorManager(policyManager, logger);
 
   await policyManager.start();
 
