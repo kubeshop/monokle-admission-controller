@@ -18,7 +18,7 @@ export async function getInformer<TValue extends k8s.KubernetesObject>(
   return {informer, start}
 }
 
-function createInformerStarter(informer: Informer<any>, onError?: k8s.ErrorCallback) { // not sure if can try to start informer multiple times
+function createInformerStarter(informer: Informer<any>, onError?: k8s.ErrorCallback) {
   return async () => {
     let tries = 0;
     let started = false;

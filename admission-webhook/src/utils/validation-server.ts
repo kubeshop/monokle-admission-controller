@@ -219,7 +219,7 @@ export class ValidationServer {
 
   private _handleViolationsByAction(violationsByAction: Record<string, Violation[]>, response: AdmissionResponse) {
     for (const action of Object.keys(violationsByAction)) {
-      // 'Warn' action shouldbe mapped to warnings, see:
+      // 'Warn' action should be mapped to warnings, see:
       // - https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/#validation-actions
       // - https://kubernetes.io/blog/2020/09/03/warnings/
       if (action.toLowerCase() === 'warn') {
