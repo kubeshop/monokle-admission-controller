@@ -111,7 +111,7 @@ export class ValidationServer {
     }
   }
 
-  private async _initRouting() {
+  private _initRouting() {
     this._server.post("/validate", async (req, _res): Promise<AdmissionResponse> => {
 
       this._logger.trace({requestBody: req.body});
