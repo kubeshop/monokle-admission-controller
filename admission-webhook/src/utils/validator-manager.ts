@@ -1,7 +1,7 @@
 import pino from 'pino';
-import {AnnotationSuppressor, Config, DisabledFixer, FingerprintSuppressor, MonokleValidator, RemotePluginLoader, ResourceParser, SchemaLoader} from "@monokle/validation";
-import {MonokleApplicablePolicy, MonoklePolicy, PolicyManager} from "./policy-manager";
-import {AdmissionRequestObject} from './validation-server';
+import {AnnotationSuppressor, Config, DisabledFixer, FingerprintSuppressor, MonokleValidator, RemotePluginLoader, ResourceParser, SchemaLoader} from '@monokle/validation';
+import {MonokleApplicablePolicy, MonoklePolicy, PolicyManager} from './policy-manager.js';
+import {AdmissionRequestObject} from './validation-server.js';
 
 export type MonokleApplicableValidator = {
   validator: MonokleValidator,

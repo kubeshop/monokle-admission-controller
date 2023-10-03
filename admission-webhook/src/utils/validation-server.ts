@@ -1,10 +1,10 @@
-import fastify from "fastify";
+import fastify from 'fastify';
 import pino from 'pino';
-import path from "path";
-import {readFileSync} from "fs";
-import {Message, Resource, RuleLevel} from "@monokle/validation";
-import {V1ObjectMeta} from "@kubernetes/client-node";
-import {ValidatorManager} from "./validator-manager";
+import path from 'path';
+import {readFileSync} from 'fs';
+import {Message, Resource, RuleLevel} from '@monokle/validation';
+import {V1ObjectMeta} from '@kubernetes/client-node';
+import {ValidatorManager} from './validator-manager.js';
 
 export type ValidationServerOptions = {
   port: number
