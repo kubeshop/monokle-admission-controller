@@ -20,9 +20,13 @@ spec:
         # within an allOf, anyOf, oneOf or not, with the exception of the two pattern for x-kubernetes-int-or-string: true (see below)."
         openAPIV3Schema:
           type: object
+          required:
+            - spec
           properties:
             spec:
               type: object
+              required:
+                - plugins
               properties:
                 plugins:
                   type: object
