@@ -1,9 +1,10 @@
-import {EventEmitter} from "events";
+import {EventEmitter} from 'events';
 import pino from 'pino';
 import {KubernetesObject} from '@kubernetes/client-node';
 import {Config} from '@monokle/validation';
-import {InformerWrapper} from './get-informer';
-import {AdmissionRequestObject} from "./validation-server";
+import {InformerWrapper} from './get-informer.js';
+import {AdmissionRequestObject} from './validation-server.js';
+import {postprocess} from './policy-postprocessor.js';
 
 export type MonoklePolicy = KubernetesObject & {
   spec: Config
@@ -81,36 +82,40 @@ export class PolicyManager extends EventEmitter{
       .filter((policy) => policy !== null) as MonokleApplicablePolicy[];
   }
 
-  private onPolicy(policy: MonoklePolicy) {
-    this._logger.debug({msg: 'Policy updated', policy});
+  private onPolicy(rawPolicy: MonoklePolicy) {
+    const policy = postprocess(rawPolicy);
 
-    this._policies.set(policy.metadata!.name!, policy);
+    this._logger.debug({msg: 'Policy updated', rawPolicy, policy});
+
+    this._policies.set(rawPolicy.metadata!.name!, policy);
 
     this.emit('policyUpdated', policy);
   }
 
-  private onPolicyRemoval(policy: MonoklePolicy) {
-    this._logger.debug({msg: 'Policy removed', policy});
+  private onPolicyRemoval(rawPolicy: MonoklePolicy) {
+    const policy = postprocess(rawPolicy);
 
-    this._policies.delete(policy.metadata!.name!);
+    this._logger.debug({msg: 'Policy removed', rawPolicy, policy});
+
+    this._policies.delete(rawPolicy.metadata!.name!);
 
     this.emit('policyRemoved', policy);
   }
 
-  private onBinding(binding: MonoklePolicyBinding) {
-    this._logger.debug({msg: 'Binding updated', binding});
+  private onBinding(rawBinding: MonoklePolicyBinding) {
+    this._logger.debug({msg: 'Binding updated', rawBinding});
 
-    this._bindings.set(binding.metadata!.name!, binding);
+    this._bindings.set(rawBinding.metadata!.name!, rawBinding);
 
-    this.emit('bindingUpdated', binding);
+    this.emit('bindingUpdated', rawBinding);
   }
 
-  private onBindingRemoval(binding: MonoklePolicyBinding) {
-    this._logger.debug({msg: 'Binding removed', binding});
+  private onBindingRemoval(rawBinding: MonoklePolicyBinding) {
+    this._logger.debug({msg: 'Binding removed', rawBinding});
 
-    this._bindings.delete(binding.metadata!.name!);
+    this._bindings.delete(rawBinding.metadata!.name!);
 
-    this.emit('bindingRemoved', binding);
+    this.emit('bindingRemoved', rawBinding);
   }
 
   private isResourceMatching(binding: MonoklePolicyBinding, resource: AdmissionRequestObject): boolean {
