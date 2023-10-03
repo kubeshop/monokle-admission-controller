@@ -17,4 +17,4 @@ webhooks:
         apiGroups: ["*"]
         apiVersions: ["*"]
         resources: ["*"]
-        scope: "Namespaced"
+        scope: "*"
