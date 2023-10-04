@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: webhook-server
-  namespace: webhook-demo
+  namespace: monokle-admission-controller
   labels:
     app: webhook-server
 spec:
@@ -15,12 +15,12 @@ spec:
       labels:
         app: webhook-server
     spec:
-      #securityContext:
+      # securityContext:
       #  runAsNonRoot: true
-      #  runAsUser: 1234
+      #  runAsUser: 1000
       containers:
       - name: server
-        image: kac-api
+        image: admission-webhook
         #imagePullPolicy: Always
         ports:
         - containerPort: 8443
@@ -29,16 +29,22 @@ spec:
         - name: webhook-tls-certs
           mountPath: /run/secrets/tls
           readOnly: true
+        env:
+          - name: MONOKLE_LOG_LEVEL
+            value: DEBUG
+          - name: MONOKLE_IGNORE_NAMESPACES
+            value: 'kube-node-lease,kube-public,kube-system,monokle-admission-controller'
       volumes:
       - name: webhook-tls-certs
         secret:
           secretName: webhook-server-tls
+      serviceAccountName: monokle-policies
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: webhook-server
-  namespace: webhook-demo
+  namespace: monokle-admission-controller
 spec:
   selector:
     app: webhook-server

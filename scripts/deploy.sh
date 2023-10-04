@@ -16,41 +16,51 @@
 
 # deploy.sh
 #
-# Sets up the environment for the admission controller webhook demo in the active cluster.
+# Sets up the environment for the admission controller webhook in the active cluster.
 
 set -euo pipefail
 
-basedir="$(dirname "$0")/deployment"
+basedir="$(dirname "$0")"
 keydir="$(mktemp -d)"
+templdir="${basedir}/../k8s/templates"
+resdir="${basedir}/../k8s/manifests"
 
 # Generate keys into a temporary directory.
 echo "Generating TLS keys ..."
 "${basedir}/generate-keys.sh" "$keydir"
 
-# Create the `webhook-demo` namespace. This cannot be part of the YAML file as we first need to create the TLS secret,
+# Create the `monokle-admission-controller` namespace. This cannot be part of the YAML file as we first need to create the TLS secret,
 # which would fail otherwise.
 echo "Creating Kubernetes objects ..."
-kubectl create namespace webhook-demo
+kubectl create namespace monokle-admission-controller
+
+# Create test namespaces
+kubectl create namespace nstest1
+kubectl create namespace nstest2
 
 # Create the TLS secret for the generated keys.
-kubectl -n webhook-demo create secret tls webhook-server-tls \
+kubectl -n monokle-admission-controller create secret tls webhook-server-tls \
    --cert "${keydir}/webhook-server-tls.crt" \
    --key "${keydir}/webhook-server-tls.key"
 
-rm -f webhook.yaml deployment.yaml
+rm -f "${resdir}/webhook.yaml" "${resdir}/deployment.yaml"
 
 # Read the PEM-encoded CA certificate, base64 encode it, and replace the `${CA_PEM_B64}` placeholder in the YAML
 # template with it. Then, create the Kubernetes resources.
 ca_pem_b64="$(openssl base64 -A <"${keydir}/ca.crt")"
-sed -e 's@${CA_PEM_B64}@'"$ca_pem_b64"'@g' <"${basedir}/webhook.yaml.template" > webhook.yaml
-cp deployment/deployment.yaml.template deployment.yaml
+sed -e 's@${CA_PEM_B64}@'"$ca_pem_b64"'@g' <"${templdir}/webhook.yaml.template" > "${resdir}/webhook.yaml"
+cp "${templdir}/deployment.yaml.template" "${resdir}/deployment.yaml"
 
-skaffold run --namespace webhook-demo
-# kubectl apply -f deployment.yaml
-sleep 2
-kubectl apply -f webhook.yaml
+# Cluster-wide
+kubectl apply -f "${resdir}/monokle-policy-crd.yaml"
+kubectl apply -f "${resdir}/monokle-policy-binding-crd.yaml"
 
-# skaffold dev
+# Namespaced
+kubectl apply -f "${resdir}/service-account.yaml" -n monokle-admission-controller
+
+skaffold run -n monokle-admission-controller -f k8s/skaffold.yaml
+sleep 5
+kubectl apply -f "${resdir}/webhook.yaml"
 
 # Delete the key directory to prevent abuse (DO NOT USE THESE KEYS ANYWHERE ELSE).
 rm -rf "$keydir"

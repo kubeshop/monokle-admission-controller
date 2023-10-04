@@ -1,5 +1,5 @@
 {
-  "name": "kac2",
+  "name": "admission-webhook",
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
@@ -13,10 +13,12 @@
   "license": "ISC",
   "dependencies": {
     "@kubernetes/client-node": "^0.18.1",
-    "@monokle/validation": "^0.16.0",
+    "@monokle/parser": "0.2.0",
+    "@monokle/validation": "^0.30.1",
     "fastify": "^3.28.0",
     "isomorphic-fetch": "^3.0.0",
     "node-fetch": "^2.6.6",
+    "pino": "^8.15.1",
     "type-fest": "^3.10.0"
   },
   "devDependencies": {

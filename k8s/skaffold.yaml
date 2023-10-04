@@ -4,12 +4,12 @@ metadata:
   name: webhook-server
 build:
   artifacts:
-    - image: kac-api
+    - image: admission-webhook
       docker:
         dockerfile: Dockerfile
 manifests:
   rawYaml:
-    - deployment.yaml
+    - ./k8s/manifests/deployment.yaml
 portForward:
   - resourceType: service
     resourceName: webhook-server

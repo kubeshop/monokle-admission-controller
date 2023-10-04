@@ -3,17 +3,18 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: demo-webhook
 webhooks:
-  - name: webhook-server.webhook-demo.svc
+  - name: webhook-server.monokle-admission-controller.svc
     sideEffects: None
     admissionReviewVersions: ["v1", "v1beta1"]
     clientConfig:
       service:
         name: webhook-server
-        namespace: webhook-demo
+        namespace: monokle-admission-controller
         path: "/validate"
       caBundle: ${CA_PEM_B64}
     rules:
-      - operations: [ "CREATE" ]
-        apiGroups: [""]
-        apiVersions: ["v1"]
-        resources: ["pods"]
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["*"]
+        apiVersions: ["*"]
+        resources: ["*"]
+        scope: "*"
