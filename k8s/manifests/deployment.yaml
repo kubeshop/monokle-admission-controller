@@ -15,13 +15,9 @@ spec:
       labels:
         app: webhook-server
     spec:
-      # securityContext:
-      #  runAsNonRoot: true
-      #  runAsUser: 1000
       containers:
       - name: server
         image: admission-webhook
-        #imagePullPolicy: Always
         ports:
         - containerPort: 8443
           name: webhook-api
@@ -37,7 +33,7 @@ spec:
       volumes:
       - name: webhook-tls-certs
         secret:
-          secretName: webhook-server-tls
+          secretName: root-secret
       serviceAccountName: monokle-policies
 ---
 apiVersion: v1

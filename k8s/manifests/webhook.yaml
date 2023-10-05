@@ -2,6 +2,8 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   name: demo-webhook
+  annotations:
+    cert-manager.io/inject-ca-from: monokle-admission-controller/monokle-admission-controller-tls-secret
 webhooks:
   - name: webhook-server.monokle-admission-controller.svc
     sideEffects: None
@@ -11,7 +13,6 @@ webhooks:
         name: webhook-server
         namespace: monokle-admission-controller
         path: "/validate"
-      caBundle: ${CA_PEM_B64}
     rules:
       - operations: ["CREATE", "UPDATE"]
         apiGroups: ["*"]
