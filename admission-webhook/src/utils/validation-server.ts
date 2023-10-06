@@ -2,7 +2,7 @@ import fastify from 'fastify';
 import pino from 'pino';
 import path from 'path';
 import {readFileSync} from 'fs';
-import {Message, Resource, RuleLevel} from '@monokle/validation';
+import {Message, Resource, RuleLevel, ValidationResult} from '@monokle/validation';
 import {V1ObjectMeta} from '@kubernetes/client-node';
 import {ValidatorManager} from './validator-manager.js';
 
@@ -51,6 +51,7 @@ export type Violation = {
   message: Message
   level?: RuleLevel
   actions: string[]
+  name: string
 }
 
 export class ValidationServer {
@@ -171,7 +172,8 @@ export class ValidationServer {
               ruleId: item.ruleId,
               message: item.message,
               level: item.level,
-              actions: actions
+              actions: actions,
+              name: this._getFullyQualifiedName(item) ?? resourceForValidation.name
             });
           }
         }
@@ -191,7 +193,7 @@ export class ValidationServer {
         return acc;
       }, {});
 
-      const responseFull = this._handleViolationsByAction(violationsByAction, response);
+      const responseFull = this._handleViolationsByAction(violationsByAction, resourceForValidation, response);
 
       this._logger.debug({response});
       this._logger.trace({resourceForValidation, validationResponses});
@@ -217,34 +219,49 @@ export class ValidationServer {
     return resource;
   }
 
-  private _handleViolationsByAction(violationsByAction: Record<string, Violation[]>, response: AdmissionResponse) {
+  private _handleViolationsByAction(violationsByAction: Record<string, Violation[]>, resource: Resource, response: AdmissionResponse) {
     for (const action of Object.keys(violationsByAction)) {
       // 'Warn' action should be mapped to warnings, see:
       // - https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/#validation-actions
       // - https://kubernetes.io/blog/2020/09/03/warnings/
       if (action.toLowerCase() === 'warn') {
-        response = this._handleViolationsAsWarn(violationsByAction[action], response);
+        response = this._handleViolationsAsWarn(violationsByAction[action], resource, response);
       }
     }
 
     return response;
   }
 
-  private _handleViolationsAsWarn(violations: Violation[], response: AdmissionResponse) {
-    const warnings = violations.filter((v) => v.level === 'warning').map((e) => `${e.ruleId}: ${e.message.text}`);
-    const errors = violations.filter((v) => v.level === 'error').map((e) => `${e.ruleId}: ${e.message.text}`);
+  private _handleViolationsAsWarn(violations: Violation[], resource: Resource, response: AdmissionResponse) {
+    const errors = violations
+      .filter((v) => v.level === 'error')
+      .map((e) => this._formatViolationMessage(e, resource));
+
+    const warnings = violations
+      .filter((v) => v.level === 'warning')
+      .map((e) => this._formatViolationMessage(e, resource));
+
 
     if (errors.length > 0 || warnings.length > 0) {
       response.response.warnings = [
-        `Monokle Admission Controller found:`,
-        `Errors: ${errors.length}`,
+        `Monokle Admission Controller found ${errors.length} errors and ${warnings.length} warnings:`,
         ...errors,
-        `Warnings: ${warnings.length}`,
         ...warnings,
-        "You can use Monokle (https://monokle.io/) to validate and fix those errors easily!"
+        'You can use Monokle Cloud (https://monokle.io/) to fix those errors easily.',
       ];
     }
 
     return response;
+  }
+
+  private _getFullyQualifiedName(result: ValidationResult) {
+    const locations = result.locations;
+    const locationWithName = locations.find((l) => l.logicalLocations?.length && l.logicalLocations.length > 0 && l.logicalLocations[0].fullyQualifiedName);
+
+    return locationWithName ? (locationWithName.logicalLocations || [])[0].fullyQualifiedName?.replace(/\./g, '/').replace('@', '').trim() : null;
+  }
+
+  private _formatViolationMessage(violation: Violation, resource: Resource) {
+    return `${violation.ruleId} (${violation.level}): ${violation.message.text.replace(/\.$/, '')}, in kind "${resource.kind}" with name "${violation.name}".`;
   }
 }
