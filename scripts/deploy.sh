@@ -26,8 +26,8 @@ templdir="${basedir}/../k8s/templates"
 resdir="${basedir}/../k8s/manifests"
 
 # Generate keys into a temporary directory.
-echo "Generating TLS keys ..."
-"${basedir}/generate-keys.sh" "$keydir"
+echo "Generating TLS keys with node ..."
+node "${basedir}/../admission-webhook-init/dist/index.js" "$keydir"
 
 # Create the `monokle-admission-controller` namespace. This cannot be part of the YAML file as we first need to create the TLS secret,
 # which would fail otherwise.
