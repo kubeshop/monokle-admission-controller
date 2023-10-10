@@ -12,6 +12,15 @@ webhooks:
         namespace: monokle-admission-controller
         path: "/validate"
       caBundle: ${CA_PEM_B64}
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values:
+            - kube-node-lease
+            - kube-public
+            - kube-system
+            - monokle-admission-controller
     rules:
       - operations: ["CREATE", "UPDATE"]
         apiGroups: ["*"]

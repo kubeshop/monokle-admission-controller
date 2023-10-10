@@ -33,7 +33,7 @@ spec:
           - name: MONOKLE_LOG_LEVEL
             value: DEBUG
           - name: MONOKLE_IGNORE_NAMESPACES
-            value: 'kube-node-lease,kube-public,kube-system,monokle-admission-controller'
+            value: ''
       volumes:
       - name: webhook-tls-certs
         secret:
