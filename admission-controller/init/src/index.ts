@@ -29,7 +29,7 @@ const WEBHOOK_NAME = 'demo-webhook'; // monokle-admission-controller-webhook
 
   logger.info('Secret created');
 
-  const webhookUpdated = updateWebhookCertificate(NAMESPACE, WEBHOOK_NAME, certs.serverCert, kc);
+  const webhookUpdated = updateWebhookCertificate(NAMESPACE, WEBHOOK_NAME, certs.caCert, kc);
 
   if (!webhookUpdated) {
     logger.error('Failed to update webhook');
