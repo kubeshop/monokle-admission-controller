@@ -1,105 +1,40 @@
-import fs from 'fs';
-import forge from 'node-forge';
+import k8s from '@kubernetes/client-node';
+import logger from './utils/logger.js';
+import { generateCertificates } from './utils/certificates.js';
+import { getSecretCertificate, applySecretCertificate, updateWebhookCertificate } from './utils/kubernetes.js';
 
-const keyDir = process.argv[2];
-if (!keyDir) {
-    console.error('Missing key directory argument');
-    process.exit(1);
-}
+const NAMESPACE = 'monokle-admission-controller';
+const SECRET_NAME = 'monokle-admission-controller-tls';
+const WEBHOOK_NAME = 'demo-webhook'; // monokle-admission-controller-webhook
 
-fs.mkdirSync(keyDir, { mode: 0o700, recursive: true });
-process.chdir(keyDir);
+(async () => {
+  const kc = new k8s.KubeConfig();
+  kc.loadFromDefault();
 
-const caKeys = forge.pki.rsa.generateKeyPair(2048);
+  const existingCert = await getSecretCertificate(NAMESPACE, SECRET_NAME, kc);
 
-const caCert = forge.pki.createCertificate();
-caCert.publicKey = caKeys.publicKey;
-caCert.serialNumber = '01';
-caCert.validity.notBefore = new Date();
-caCert.validity.notAfter = new Date();
-caCert.validity.notAfter.setFullYear(caCert.validity.notBefore.getFullYear() + 1);
+  if (existingCert) {
+    // @TODO validate existing cert (expiration date)
+    logger.info('Secret already exists. Skipping.');
+    return;
+  }
 
-const attrs = [
-    { name: 'commonName', value: 'Monokle Admission Controller CA' },
-];
-caCert.setSubject(attrs);
-caCert.setIssuer(attrs);
-caCert.setExtensions([
-    {
-        name: 'basicConstraints',
-        cA: true,
-    },
-]);
+  const certs = generateCertificates();
+  const certCreated = await applySecretCertificate(NAMESPACE, SECRET_NAME, certs.serverKey, certs.serverCert, kc);
 
-caCert.sign(caKeys.privateKey);
+  if (!certCreated) {
+    logger.error('Failed to create secret');
+    return;
+  }
 
-fs.writeFileSync('ca.key', forge.pki.privateKeyToPem(caKeys.privateKey));
-fs.writeFileSync('ca.crt', forge.pki.certificateToPem(caCert));
+  logger.info('Secret created');
 
-const serverKeys = forge.pki.rsa.generateKeyPair(2048);
-const csr = forge.pki.createCertificationRequest();
-csr.publicKey = serverKeys.publicKey;
-csr.setSubject([
-    {
-        name: 'commonName',
-        value: 'webhook-server.monokle-admission-controller.svc',
-    },
-]);
-// This is according to docs here: https://www.npmjs.com/package/node-forge#pkcs10.
-// Looks like some types are incorrect.
-(csr as any).setAttributes([
-    {
-        name: 'extensionRequest',
-        extensions: [
-            {
-                name: 'subjectAltName',
-                altNames: [
-                    {
-                        type: 2,
-                        value: 'webhook-server.monokle-admission-controller.svc',
-                    },
-                ],
-            },
-        ],
-    },
-]);
-csr.sign(serverKeys.privateKey);
+  const webhookUpdated = updateWebhookCertificate(NAMESPACE, WEBHOOK_NAME, certs.serverCert, kc);
 
-const serverCert = forge.pki.createCertificate();
-serverCert.publicKey = csr.publicKey;
-serverCert.serialNumber = '01';
-serverCert.validity.notBefore = new Date();
-serverCert.validity.notAfter = new Date();
-serverCert.validity.notAfter.setFullYear(serverCert.validity.notBefore.getFullYear() + 1);
-serverCert.setSubject(csr.subject.attributes);
-serverCert.setIssuer(caCert.subject.attributes);
-serverCert.setExtensions([
-    {
-        name: 'basicConstraints',
-        cA: false,
-    },
-    {
-        name: 'keyUsage',
-        nonRepudiation: true,
-        digitalSignature: true,
-        keyEncipherment: true,
-    },
-    {
-        name: 'extKeyUsage',
-        serverAuth: true,
-        clientAuth: true,
-    },
-    {
-        name: 'subjectAltName',
-        altNames: [
-            {
-                type: 2,
-                value: 'webhook-server.monokle-admission-controller.svc',
-            },
-        ],
-    },
-]);
-serverCert.sign(caKeys.privateKey, forge.md.sha256.create());
+  if (!webhookUpdated) {
+    logger.error('Failed to update webhook');
+    return;
+  }
 
-fs.writeFileSync('webhook-server-tls.key', forge.pki.privateKeyToPem(serverKeys.privateKey));
-fs.writeFileSync('webhook-server-tls.crt', forge.pki.certificateToPem(serverCert));
+  logger.info('Webhook updated created');
+})();
