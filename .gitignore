@@ -1,3 +1,1 @@
 /.idea/
-k8s/manifests/webhook.yaml
-k8s/manifests/deployment.yaml

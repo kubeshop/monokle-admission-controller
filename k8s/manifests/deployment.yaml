@@ -18,6 +18,9 @@ spec:
       # securityContext:
       #  runAsNonRoot: true
       #  runAsUser: 1000
+      initContainers:
+      - name: init
+        image: admission-webhook-init
       containers:
       - name: server
         image: admission-webhook
@@ -37,8 +40,9 @@ spec:
       volumes:
       - name: webhook-tls-certs
         secret:
-          secretName: webhook-server-tls
-      serviceAccountName: monokle-policies
+          secretName: monokle-admission-controller-tls
+          optional: true
+      serviceAccountName: monokle-policies-sa
 ---
 apiVersion: v1
 kind: Service
@@ -51,3 +55,33 @@ spec:
   ports:
     - port: 443
       targetPort: webhook-api
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: demo-webhook
+webhooks:
+  - name: webhook-server.monokle-admission-controller.svc
+    sideEffects: None
+    admissionReviewVersions: ["v1", "v1beta1"]
+    clientConfig:
+      service:
+        name: webhook-server
+        namespace: monokle-admission-controller
+        path: "/validate"
+      caBundle: ""
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values:
+            - kube-node-lease
+            - kube-public
+            - kube-system
+            - monokle-admission-controller
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["*"]
+        apiVersions: ["*"]
+        resources: ["*"]
+        scope: "*"

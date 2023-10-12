@@ -30,7 +30,7 @@ minikube start --uuid 00000000-0000-0000-0000-000000000001 --extra-config=apiser
 Namespaced resources (webhook server) will be deployed to dedicated `monokle-admission-controller` namespace, to watch it you can run:
 
 ```bash
-watch kubectl -n monokle-admission-controller get all,CustomResourceDefinition,ValidatingWebhookConfiguration,MutatingWebhookConfiguration
+watch kubectl -n monokle-admission-controller get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets
 ```
 
 After it runs, the result should be something like:

@@ -5,8 +5,13 @@ metadata:
 build:
   artifacts:
     - image: admission-webhook
+      context: ./admission-controller/server
       docker:
-        dockerfile: Dockerfile
+        dockerfile: ./admission-controller/server/Dockerfile
+    - image: admission-webhook-init
+      context: ./admission-controller/init
+      docker:
+        dockerfile: ./admission-controller/init/Dockerfile
 manifests:
   rawYaml:
     - ./k8s/manifests/deployment.yaml
