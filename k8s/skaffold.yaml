@@ -1,7 +1,7 @@
 apiVersion: skaffold/v4beta5
 kind: Config
 metadata:
-  name: webhook-server
+  name: monokle-admission-controller-server
 build:
   artifacts:
     - image: admission-webhook
@@ -17,5 +17,5 @@ manifests:
     - ./k8s/manifests/deployment.yaml
 portForward:
   - resourceType: service
-    resourceName: webhook-server
+    resourceName: monokle-admission-controller-server
     port: 443

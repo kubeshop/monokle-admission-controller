@@ -37,20 +37,20 @@ After it runs, the result should be something like:
 
 ```bash
 NAME                                  READY   STATUS   RESTARTS      AGE
-pod/webhook-server-7cd54c9fcf-wdkdn   0/1     Error    1 (13s ago)   25s
+pod/monokle-admission-controller-server-7cd54c9fcf-wdkdn   0/1     Error    1 (13s ago)   25s
 
 NAME                     TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
-service/webhook-server   ClusterIP   10.97.66.194   <none>        443/TCP   25s
+service/monokle-admission-controller-server   ClusterIP   10.97.66.194   <none>        443/TCP   25s
 
 NAME                             READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/webhook-server   0/1     1            0           25s
+deployment.apps/monokle-admission-controller-server   0/1     1            0           25s
 
 NAME                                        DESIRED   CURRENT   READY   AGE
-replicaset.apps/webhook-server-7cd54c9fcf   1         1         0       25s
+replicaset.apps/monokle-admission-controller-server-7cd54c9fcf   1         1         0       25s
 
 NAME                                                                       CREATED AT
-customresourcedefinition.apiextensions.k8s.io/policies.monokle.com         2023-10-02T12:17:02Z
-customresourcedefinition.apiextensions.k8s.io/policybindings.monokle.com   2023-10-02T12:17:02Z
+customresourcedefinition.apiextensions.k8s.io/policies.monokle.io         2023-10-02T12:17:02Z
+customresourcedefinition.apiextensions.k8s.io/policybindings.monokle.io   2023-10-02T12:17:02Z
 
 NAME                                                                       WEBHOOKS   AGE
 validatingwebhookconfiguration.admissionregistration.k8s.io/demo-webhook   1          17s
@@ -60,8 +60,8 @@ For getting info about CRDs:
 
 ```bash
 kubectl get crd
-kubectl describe crd policies.monokle.com
-kubectl describe crd policybindings.monokle.com
+kubectl describe crd policies.monokle.io
+kubectl describe crd policybindings.monokle.io
 ```
 
 #### Testing
@@ -117,8 +117,8 @@ kubectl delete validatingwebhookconfiguration.admissionregistration.k8s.io/demo-
 kubectl delete namespace monokle-admission-controller && \
 kubectl delete namespace nstest1 && \
 kubectl delete namespace nstest2 && \
-kubectl delete crd policies.monokle.com && \
-kubectl delete crd policybindings.monokle.com
+kubectl delete crd policies.monokle.io && \
+kubectl delete crd policybindings.monokle.io
 ```
 
 ### Refs

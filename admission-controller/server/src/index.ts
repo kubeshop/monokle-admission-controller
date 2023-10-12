@@ -14,7 +14,7 @@ const logger = pino({
 
 (async() => {
   const policyInformer = await getInformer<MonoklePolicy>(
-    'monokle.com',
+    'monokle.io',
     'v1alpha1',
     'policies',
     (err: any) => {
@@ -23,7 +23,7 @@ const logger = pino({
   );
 
   const bindingsInformer = await getInformer<MonoklePolicyBinding>(
-    'monokle.com',
+    'monokle.io',
     'v1alpha1',
     'policybindings',
     (err: any) => {

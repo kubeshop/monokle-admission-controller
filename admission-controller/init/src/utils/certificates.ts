@@ -37,7 +37,7 @@ export function generateCertificates(): CertificateSet {
   csr.setSubject([
       {
           name: 'commonName',
-          value: 'webhook-server.monokle-admission-controller.svc',
+          value: 'monokle-admission-controller-server.monokle-admission-controller.svc',
       },
   ]);
   // This is according to docs here: https://www.npmjs.com/package/node-forge#pkcs10.
@@ -51,7 +51,7 @@ export function generateCertificates(): CertificateSet {
                   altNames: [
                       {
                           type: 2,
-                          value: 'webhook-server.monokle-admission-controller.svc',
+                          value: 'monokle-admission-controller-server.monokle-admission-controller.svc',
                       },
                   ],
               },
@@ -89,7 +89,7 @@ export function generateCertificates(): CertificateSet {
           altNames: [
               {
                   type: 2,
-                  value: 'webhook-server.monokle-admission-controller.svc',
+                  value: 'monokle-admission-controller-server.monokle-admission-controller.svc',
               },
           ],
       },

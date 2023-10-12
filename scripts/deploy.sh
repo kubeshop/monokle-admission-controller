@@ -20,4 +20,4 @@ kubectl apply -f "${resdir}/service-account.yaml"
 # Run deployment through skaffold with locally build images
 skaffold run -n monokle-admission-controller -f k8s/skaffold.yaml
 
-echo "The webhook server has been deployed and configured!"
+echo "Deployment complete."
