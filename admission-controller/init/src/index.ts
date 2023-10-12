@@ -25,11 +25,11 @@ const WEBHOOK_NAME = 'monokle-admission-controller-webhook';
 // 2. Fetch secret data (containing our cert).
 // 3. Check cert validity.
 //   - If valid, exit.
-//   - If empty or invalid, generate new secret
+//   - If empty or invalid, generate new secret.
 // 4. Write cert to webhook.
 // 5. Write cert to secret.
 //
-// Such order of actions prevents from cases where secret (with) cert is updated but webhook is not.
+// Such order of actions prevents from cases where secret (with cert) is updated but webhook is not.
 // At the same time, entire process is treated as atomic one, if something goes wrong, retry from the beginning.
 async function run(_bail: (e: Error) => void, _attempt: number) {
   const kc = new k8s.KubeConfig();

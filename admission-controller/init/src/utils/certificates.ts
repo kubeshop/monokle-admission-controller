@@ -15,7 +15,7 @@ export function generateCertificates(): CertificateSet {
   caCert.serialNumber = '01';
   caCert.validity.notBefore = new Date();
   caCert.validity.notAfter = new Date();
-  caCert.validity.notAfter.setFullYear(caCert.validity.notBefore.getFullYear() + 1);
+  caCert.validity.notAfter.setMonth(caCert.validity.notBefore.getMonth() + 3);
 
   const attrs = [
       { name: 'commonName', value: 'Monokle Admission Controller CA' },
@@ -37,7 +37,7 @@ export function generateCertificates(): CertificateSet {
   serverCert.serialNumber = '01';
   serverCert.validity.notBefore = new Date();
   serverCert.validity.notAfter = new Date();
-  serverCert.validity.notAfter.setFullYear(serverCert.validity.notBefore.getFullYear() + 1);
+  serverCert.validity.notAfter.setMonth(serverCert.validity.notBefore.getMonth() + 3);
   serverCert.setSubject([
     {
         name: 'commonName',
