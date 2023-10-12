@@ -55,7 +55,7 @@ spec:
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
-  name: demo-webhook
+  name: monokle-admission-controller-webhook
 webhooks:
   - name: monokle-admission-controller-server.monokle-admission-controller.svc
     sideEffects: None

@@ -53,7 +53,7 @@ customresourcedefinition.apiextensions.k8s.io/policies.monokle.io         2023-1
 customresourcedefinition.apiextensions.k8s.io/policybindings.monokle.io   2023-10-02T12:17:02Z
 
 NAME                                                                       WEBHOOKS   AGE
-validatingwebhookconfiguration.admissionregistration.k8s.io/demo-webhook   1          17s
+validatingwebhookconfiguration.admissionregistration.k8s.io/monokle-admission-controller-webhook   1          17s
 ```
 
 For getting info about CRDs:
@@ -113,7 +113,7 @@ You can also do manual clean-up and re-run `./deploy.sh` script again:
 
 ```bash
 kubectl delete all -n monokle-admission-controller --all && \
-kubectl delete validatingwebhookconfiguration.admissionregistration.k8s.io/demo-webhook -n monokle-admission-controller && \
+kubectl delete validatingwebhookconfiguration.admissionregistration.k8s.io/monokle-admission-controller-webhook && \
 kubectl delete namespace monokle-admission-controller && \
 kubectl delete namespace nstest1 && \
 kubectl delete namespace nstest2 && \

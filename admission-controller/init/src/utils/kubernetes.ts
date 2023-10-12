@@ -76,13 +76,12 @@ export async function applySecretCertificate(namespace: string, name: string, pk
   }
 }
 
-export async function updateWebhookCertificate(namespace: string, name: string, certificate: forge.pki.Certificate, config: k8s.KubeConfig) {
-  const k8sApi = config.makeApiClient(k8s.AdmissionregistrationV1Api);
+export async function getWebhookConfiguration(namespace: string, name: string, config: k8s.KubeConfig): Promise<k8s.V1ValidatingWebhookConfiguration | null> {
   const client = k8s.KubernetesObjectApi.makeApiClient(config);
 
   let res;
   try {
-    const resRead = res = await client.read<k8s.V1ValidatingWebhookConfiguration>({
+    res = await client.read<k8s.V1ValidatingWebhookConfiguration>({
       apiVersion: 'admissionregistration.k8s.io/v1',
       kind: 'ValidatingWebhookConfiguration',
       metadata: {
@@ -91,11 +90,23 @@ export async function updateWebhookCertificate(namespace: string, name: string, 
       },
     });
 
-    if (resRead.response.statusCode !== 200) {
-      throw new Error(`Failed to read webhook ${namespace}/${name} (non 200 status code)`);
+    if (res.response.statusCode !== 200) {
+      throw new Error(`Failed to get webhook ${namespace}/${name} (non 200 status code)`);
     }
 
-    const webhookConfig = (res.body.webhooks || [])[0];
+    return res.body;
+  } catch (err: any) {
+    logger.error(formatLog(`Failed to get webhook ${namespace}/${name}`, err, res));
+    return null;
+  }
+}
+
+export async function patchWebhookCertificate(namespace: string, name: string, webhook: k8s.V1ValidatingWebhookConfiguration, certificate: forge.pki.Certificate, config: k8s.KubeConfig) {
+  const k8sApi = config.makeApiClient(k8s.AdmissionregistrationV1Api);
+
+  let res;
+  try {
+    const webhookConfig = (webhook.webhooks || [])[0];
     if (!webhookConfig) {
       throw new Error(`Webhook ${namespace}/${name} does not exist`);
     }
@@ -122,7 +133,7 @@ export async function updateWebhookCertificate(namespace: string, name: string, 
 
     return true;
   } catch (err: any) {
-    logger.error(formatLog(`Failed to update webhook ${namespace}/${name}`, err, res));
+    logger.error(formatLog(`Failed to patch webhook ${namespace}/${name}`, err, res));
     return false;
   }
 }

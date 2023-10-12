@@ -103,3 +103,8 @@ export function generateCertificates(): CertificateSet {
     serverCert: serverCert,
   }
 }
+
+export function isCertValid(certificate: forge.pki.Certificate): boolean {
+  const now = new Date();
+  return now > certificate.validity.notBefore && now < certificate.validity.notAfter;
+}
