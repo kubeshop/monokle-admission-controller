@@ -32,41 +32,18 @@ export function generateCertificates(): CertificateSet {
   caCert.sign(caKeys.privateKey);
 
   const serverKeys = forge.pki.rsa.generateKeyPair(2048);
-  const csr = forge.pki.createCertificationRequest();
-  csr.publicKey = serverKeys.publicKey;
-  csr.setSubject([
-      {
-          name: 'commonName',
-          value: 'monokle-admission-controller-server.monokle-admission-controller.svc',
-      },
-  ]);
-  // This is according to docs here: https://www.npmjs.com/package/node-forge#pkcs10.
-  // Looks like TS typings issue.
-  (csr as any).setAttributes([
-      {
-          name: 'extensionRequest',
-          extensions: [
-              {
-                  name: 'subjectAltName',
-                  altNames: [
-                      {
-                          type: 2,
-                          value: 'monokle-admission-controller-server.monokle-admission-controller.svc',
-                      },
-                  ],
-              },
-          ],
-      },
-  ]);
-  csr.sign(serverKeys.privateKey);
-
   const serverCert = forge.pki.createCertificate();
-  serverCert.publicKey = csr.publicKey;
+  serverCert.publicKey = serverKeys.publicKey;
   serverCert.serialNumber = '01';
   serverCert.validity.notBefore = new Date();
   serverCert.validity.notAfter = new Date();
   serverCert.validity.notAfter.setFullYear(serverCert.validity.notBefore.getFullYear() + 1);
-  serverCert.setSubject(csr.subject.attributes);
+  serverCert.setSubject([
+    {
+        name: 'commonName',
+        value: 'monokle-admission-controller-server.monokle-admission-controller.svc',
+    },
+  ]);
   serverCert.setIssuer(caCert.subject.attributes);
   serverCert.setExtensions([
       {
