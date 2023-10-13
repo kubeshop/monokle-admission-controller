@@ -30,6 +30,9 @@ jobs:
       - name: Deploy Admission Controller
         run: ./scripts/deploy.sh
 
+      - name: Wait for Admission Controller
+        run: sleep 60
+
       - name: Install Dependencies
         working-directory: ./tests/
         run: npm ci
