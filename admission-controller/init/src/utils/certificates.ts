@@ -41,7 +41,7 @@ export function generateCertificates(namespace: string, expireInMonths: number):
   serverCert.setSubject([
     {
         name: 'commonName',
-        value: 'monokle-admission-controller-server.monokle-admission-controller.svc',
+        value: `monokle-admission-controller-server.${namespace}.svc`,
     },
   ]);
   serverCert.setIssuer(caCert.subject.attributes);
@@ -66,7 +66,7 @@ export function generateCertificates(namespace: string, expireInMonths: number):
           altNames: [
               {
                   type: 2,
-                  value: 'monokle-admission-controller-server.monokle-admission-controller.svc',
+                  value: `monokle-admission-controller-server.${namespace}.svc`,
               },
           ],
       },

@@ -3,6 +3,7 @@ import { afterEach, assert, beforeAll, describe, it } from 'vitest'
 import shell from 'shelljs';
 
 const VERBOSE = process.env.VERBOSE === 'true';
+const NAMESPACE = process.env.MONOKLE_NAMESPACE || 'monokle-admission-controller';
 
 const currentDir = __dirname;
 const mainDir = resolve(join(currentDir, '..', '..'));
@@ -12,7 +13,7 @@ const mainDir = resolve(join(currentDir, '..', '..'));
 
 describe(`All (dir: ${mainDir})`, () => {
   beforeAll(async () => {
-    await waitForResult('kubectl -n monokle-admission-controller get pod', (result) => {
+    await waitForResult(`kubectl -n ${NAMESPACE} get pod`, (result) => {
       return result.includes('monokle-admission-controller-server') && result.includes('Running');
     }, 50000);
 

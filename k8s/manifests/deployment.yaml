@@ -18,6 +18,9 @@ spec:
       initContainers:
       - name: init
         image: admission-webhook-init
+        env:
+          - name: MONOKLE_NAMESPACE
+            value: monokle-admission-controller
       containers:
       - name: server
         image: admission-webhook

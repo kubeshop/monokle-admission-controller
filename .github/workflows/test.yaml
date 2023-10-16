@@ -69,7 +69,7 @@ jobs:
         working-directory: ./admission-controller/server
 
       - name: Helm install
-        run: eval $(minikube -p minikube docker-env) && helm install monokle-ac ./helm
+        run: eval $(minikube -p minikube docker-env) && helm install monokle-ac ./helm --set namespace=mac-test
 
       # @TODO move to test beforeAll to correctly detect if admission-controller pod is ready.
       - name: Wait for Admission Controller
@@ -79,7 +79,7 @@ jobs:
         run: kubectl create namespace nstest1 && kubectl create namespace nstest2
 
       - name: Preview namespace state
-        run: kubectl -n monokle-admission-controller get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets
+        run: kubectl -n mac-test get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets
 
       - name: Install Dependencies
         working-directory: ./tests/
@@ -87,4 +87,4 @@ jobs:
 
       - name: Test
         working-directory: ./tests/
-        run: npm test
+        run: MONOKLE_NAMESPACE=mac-test && npm test

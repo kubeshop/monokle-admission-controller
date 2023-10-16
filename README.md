@@ -158,5 +158,5 @@ docker images
 ```
 
 ```bash
-helm install monokle-ac ./monokle-admission-controller --dry-run --debug
+helm install monokle-ac ./helm --dry-run --debug
 ```
