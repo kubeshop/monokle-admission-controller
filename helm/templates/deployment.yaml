@@ -5,6 +5,7 @@ metadata:
   namespace: {{ include "monokle-admission-controller.namespace" . }}
   labels:
     app: monokle-admission-controller-server
+    {{- include "monokle-admission-controller.labels" . | nindent 4 }}
 spec:
   replicas: 1
   selector:
@@ -14,18 +15,27 @@ spec:
     metadata:
       labels:
         app: monokle-admission-controller-server
+        {{- include "monokle-admission-controller.labels" . | nindent 8 }}
     spec:
       initContainers:
       - name: init
-        image: admission-webhook-init
-        imagePullPolicy: Never
+        {{- if not .Values.image.init.overridePath }}
+        image: "{{ .Values.image.init.repository }}:{{ .Values.image.init.tag | default .Chart.AppVersion }}"
+        {{- else }}
+        image: {{ .Values.image.init.overridePath }}
+        {{- end }}
+        imagePullPolicy: {{ .Values.image.init.pullPolicy }}
         env:
           - name: MONOKLE_NAMESPACE
             value: {{ include "monokle-admission-controller.namespace" . }}
       containers:
       - name: server
-        image: admission-webhook
-        imagePullPolicy: Never
+        {{- if not .Values.image.server.overridePath }}
+        image: "{{ .Values.image.server.repository }}:{{ .Values.image.server.tag | default .Chart.AppVersion }}"
+        {{- else }}
+        image: {{ .Values.image.server.overridePath }}
+        {{- end }}
+        imagePullPolicy: {{ .Values.image.server.pullPolicy }}
         ports:
         - containerPort: 8443
           name: webhook-api
@@ -50,6 +60,8 @@ kind: Service
 metadata:
   name: monokle-admission-controller-server
   namespace: {{ include "monokle-admission-controller.namespace" . }}
+  labels:
+    {{- include "monokle-admission-controller.labels" . | nindent 4 }}
 spec:
   selector:
     app: monokle-admission-controller-server
@@ -61,6 +73,8 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   name: monokle-admission-controller-webhook
+  labels:
+    {{- include "monokle-admission-controller.labels" . | nindent 4 }}
 webhooks:
   - name: monokle-admission-controller-server.{{ include "monokle-admission-controller.namespace" . }}.svc
     sideEffects: None
@@ -80,6 +94,9 @@ webhooks:
             - kube-public
             - kube-system
             - {{ include "monokle-admission-controller.namespace" . }}
+            {{- with .Values.ignoreNamespaces }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
     rules:
       - operations: ["CREATE", "UPDATE"]
         apiGroups: ["*"]

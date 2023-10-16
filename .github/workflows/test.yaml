@@ -69,7 +69,14 @@ jobs:
         working-directory: ./admission-controller/server
 
       - name: Helm install
-        run: eval $(minikube -p minikube docker-env) && helm install monokle-ac ./helm --set namespace=mac-test
+        run: |
+          eval $(minikube -p minikube docker-env)
+          helm install monokle-ac ./helm \
+            --set namespace=mac-test \
+            --set image.init.pullPolicy=Never \
+            --set image.init.overridePath=admission-webhook-init \
+            --set image.server.pullPolicy=Never \
+            --set image.server.overridePath=admission-webhook
 
       # @TODO move to test beforeAll to correctly detect if admission-controller pod is ready.
       - name: Wait for Admission Controller
