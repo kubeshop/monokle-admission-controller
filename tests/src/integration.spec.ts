@@ -115,8 +115,12 @@ const waitForResult = async (command: string, isExpected: (result: string) => bo
       throw new Error(`Timeout waiting for result of command: ${command}`);
     }
 
-    const result = await run(command);
-    isValid = isExpected(result);
+    try {
+      const result = await run(command);
+      isValid = isExpected(result);
+    } catch (err) {
+      VERBOSE && console.log('waitForResult error', err);
+    }
 
     if (!isValid) {
       sleep(250);
