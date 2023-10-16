@@ -87,4 +87,4 @@ jobs:
 
       - name: Test
         working-directory: ./tests/
-        run: MONOKLE_NAMESPACE=mac-test && npm test
+        run: MONOKLE_NAMESPACE=mac-test npm test
