@@ -120,6 +120,7 @@ const waitForResult = async (command: string, isExpected: (result: string) => bo
 };
 
 const cleanup = async () => {
+  // @TODO not very efficient, should be improved
   return Promise.allSettled([
     run(`cd "${mainDir}" && kubectl delete -f examples/policy-sample-1.yaml`),
     run(`cd "${mainDir}" && kubectl delete -f examples/policy-sample-2.yaml`),

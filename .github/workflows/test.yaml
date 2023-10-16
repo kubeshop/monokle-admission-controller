@@ -30,8 +30,12 @@ jobs:
       - name: Deploy Admission Controller
         run: ./scripts/deploy.sh
 
+      # @TODO move to test beforeAll to correctly detect if admission-controller pod is ready.
       - name: Wait for Admission Controller
         run: sleep 60
+
+      - name: Preview namespace state
+        run: kubectl -n monokle-admission-controller get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets
 
       - name: Install Dependencies
         working-directory: ./tests/
