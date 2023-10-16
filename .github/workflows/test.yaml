@@ -9,7 +9,7 @@ on:
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
-  test:
+  test-skaffold:
     name: Test
     runs-on: ubuntu-latest
     steps:
@@ -29,6 +29,47 @@ jobs:
 
       - name: Deploy Admission Controller
         run: ./scripts/deploy.sh
+
+      # @TODO move to test beforeAll to correctly detect if admission-controller pod is ready.
+      - name: Wait for Admission Controller
+        run: sleep 60
+
+      - name: Preview namespace state
+        run: kubectl -n monokle-admission-controller get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets
+
+      - name: Install Dependencies
+        working-directory: ./tests/
+        run: npm ci
+
+      - name: Test
+        working-directory: ./tests/
+        run: npm test
+
+  test-helm:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 18
+
+      - name: Checkout Repo
+        uses: actions/checkout@v2
+
+      - name: Start Minikube
+        run: minikube start --uuid 00000000-0000-0000-0000-000000000001 --extra-config=apiserver.enable-admission-plugins=ValidatingAdmissionWebhook
+
+      - name: Build local images (init container)
+        run: eval $(minikube -p minikube docker-env) && minikube image build -t admission-webhook-init -f ./Dockerfile .
+        working-directory: ./admission-controller/init
+
+      - name: Build local images (server container)
+        run: eval $(minikube -p minikube docker-env) && minikube image build -t admission-webhook -f ./Dockerfile .
+        working-directory: ./admission-controller/server
+
+      - name: Helm install
+        run: eval $(minikube -p minikube docker-env) && helm install monokle-ac ./helm
 
       # @TODO move to test beforeAll to correctly detect if admission-controller pod is ready.
       - name: Wait for Admission Controller

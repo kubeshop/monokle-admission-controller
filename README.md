@@ -143,3 +143,20 @@ kubectl delete crd policybindings.monokle.io
 * https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
 * https://kubernetes-client.github.io/javascript/index.html
 * https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/
+
+
+### Helm with minikube for testing
+
+```bash
+eval $(minikube -p minikube docker-env)
+```
+```bash
+cd admission-controller/[server|init]
+minikube image build -t admission-webhook-init -f ./Dockerfile .
+minikube image build -t admission-webhook -f ./Dockerfile .
+docker images
+```
+
+```bash
+helm install monokle-ac ./monokle-admission-controller --dry-run --debug
+```
