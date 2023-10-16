@@ -10,7 +10,7 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   test-skaffold:
-    name: Test
+    name: Skaffold
     runs-on: ubuntu-latest
     steps:
       - name: Setup Skaffold
@@ -46,7 +46,7 @@ jobs:
         run: npm test
 
   test-helm:
-    name: Test
+    name: Helm
     runs-on: ubuntu-latest
     steps:
       - name: Setup Node.js
@@ -74,6 +74,9 @@ jobs:
       # @TODO move to test beforeAll to correctly detect if admission-controller pod is ready.
       - name: Wait for Admission Controller
         run: sleep 60
+
+      - name: Create test namespaces
+        run: kubectl create namespace nstest1 && kubectl create namespace nstest2
 
       - name: Preview namespace state
         run: kubectl -n monokle-admission-controller get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets
