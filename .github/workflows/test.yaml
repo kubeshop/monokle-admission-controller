@@ -30,10 +30,6 @@ jobs:
       - name: Deploy Admission Controller
         run: ./scripts/deploy.sh
 
-      # @TODO move to test beforeAll to correctly detect if admission-controller pod is ready.
-      - name: Wait for Admission Controller
-        run: sleep 60
-
       - name: Preview namespace state
         run: kubectl -n monokle-admission-controller get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets
 
@@ -77,10 +73,6 @@ jobs:
             --set image.init.overridePath=admission-webhook-init \
             --set image.server.pullPolicy=Never \
             --set image.server.overridePath=admission-webhook
-
-      # @TODO move to test beforeAll to correctly detect if admission-controller pod is ready.
-      - name: Wait for Admission Controller
-        run: sleep 60
 
       - name: Create test namespaces
         run: kubectl create namespace nstest1 && kubectl create namespace nstest2

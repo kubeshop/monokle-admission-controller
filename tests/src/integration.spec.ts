@@ -15,10 +15,14 @@ describe(`All (dir: ${mainDir})`, () => {
   beforeAll(async () => {
     await waitForResult(`kubectl -n ${NAMESPACE} get pod`, (result) => {
       return result.includes('monokle-admission-controller-server') && result.includes('Running');
-    }, 50000);
+    }, 60 * 1000);
+
+    await waitForResult(`kubectl -n ${NAMESPACE} logs -l app=monokle-admission-controller-server --tail 100`, (result) => {
+      return result.includes('Server listening at');
+    }, 60 * 1000);
 
     await cleanup();
-  }, 60000);
+  }, 120 * 1000);
 
   afterEach(async () => {
     await cleanup();
