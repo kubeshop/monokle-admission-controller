@@ -14,7 +14,7 @@ build:
         dockerfile: ./admission-controller/init/Dockerfile
 manifests:
   rawYaml:
-    - ./k8s/manifests/deployment.yaml
+    - ./scripts/install.yaml
 portForward:
   - resourceType: service
     resourceName: monokle-admission-controller-server

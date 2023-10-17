@@ -22,6 +22,9 @@ describe(`All (dir: ${mainDir})`, () => {
     }, 60 * 1000);
 
     await cleanup();
+
+    await run('kubectl create namespace nstest1');
+    await run('kubectl create namespace nstest2');
   }, 120 * 1000);
 
   afterEach(async () => {

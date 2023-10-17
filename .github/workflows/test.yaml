@@ -56,9 +56,6 @@ jobs:
       - name: Start Minikube
         run: minikube start --uuid 00000000-0000-0000-0000-000000000001 --extra-config=apiserver.enable-admission-plugins=ValidatingAdmissionWebhook
 
-      - name: Create test namespaces
-        run: kubectl create namespace nstest1 && kubectl create namespace nstest2
-
       - name: Build local images (init container)
         run: eval $(minikube -p minikube docker-env) && minikube image build -t admission-webhook-init -f ./Dockerfile .
         working-directory: ./admission-controller/init
@@ -70,7 +67,8 @@ jobs:
       - name: Helm install
         run: |
           eval $(minikube -p minikube docker-env)
-          helm install monokle-ac ./helm \
+          helm package ./helm --version 0.0.0
+          helm install monokle-ac monokle-admission-controller-0.0.0.tgz \
             --set namespace=mac-test \
             --set image.init.pullPolicy=Never \
             --set image.init.overridePath=admission-webhook-init \
