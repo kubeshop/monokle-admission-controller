@@ -7,7 +7,7 @@ export type CertificateSet = {
   serverCert: forge.pki.Certificate;
 }
 
-export function generateCertificates(): CertificateSet {
+export function generateCertificates(namespace: string, expireInMonths: number): CertificateSet {
   const caKeys = forge.pki.rsa.generateKeyPair(2048);
 
   const caCert = forge.pki.createCertificate();
@@ -15,7 +15,7 @@ export function generateCertificates(): CertificateSet {
   caCert.serialNumber = '01';
   caCert.validity.notBefore = new Date();
   caCert.validity.notAfter = new Date();
-  caCert.validity.notAfter.setMonth(caCert.validity.notBefore.getMonth() + 3);
+  caCert.validity.notAfter.setMonth(caCert.validity.notBefore.getMonth() + expireInMonths);
 
   const attrs = [
       { name: 'commonName', value: 'Monokle Admission Controller CA' },
@@ -37,7 +37,7 @@ export function generateCertificates(): CertificateSet {
   serverCert.serialNumber = '01';
   serverCert.validity.notBefore = new Date();
   serverCert.validity.notAfter = new Date();
-  serverCert.validity.notAfter.setMonth(serverCert.validity.notBefore.getMonth() + 3);
+  serverCert.validity.notAfter.setMonth(serverCert.validity.notBefore.getMonth() + expireInMonths);
   serverCert.setSubject([
     {
         name: 'commonName',
@@ -79,6 +79,12 @@ export function generateCertificates(): CertificateSet {
     serverKey: serverKeys.privateKey,
     serverCert: serverCert,
   }
+}
+
+export function isCertExpiring(certificate: forge.pki.Certificate, thresholdDays: number): boolean {
+    const threshold = new Date();
+    threshold.setDate(threshold.getDate() + thresholdDays);
+    return threshold > certificate.validity.notAfter;
 }
 
 export function isCertValid(certificate: forge.pki.Certificate): boolean {

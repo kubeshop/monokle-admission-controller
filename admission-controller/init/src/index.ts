@@ -1,7 +1,7 @@
 import k8s from '@kubernetes/client-node';
 import retry from 'async-retry';
 import logger, { formatLog } from './utils/logger.js';
-import { generateCertificates, isCertValid } from './utils/certificates.js';
+import { generateCertificates, isCertExpiring, isCertValid } from './utils/certificates.js';
 import { getSecretCertificate, applySecretCertificate, getWebhookConfiguration, patchWebhookCertificate } from './utils/kubernetes.js';
 
 const NAMESPACE = 'monokle-admission-controller';
@@ -24,8 +24,8 @@ const WEBHOOK_NAME = 'monokle-admission-controller-webhook';
 //   - If there is none, it doesn't make sense to continue. Throw an error and retry.
 // 2. Fetch secret data (containing our cert).
 // 3. Check cert validity.
-//   - If valid, exit.
-//   - If empty or invalid, generate new secret.
+//   - If valid and not within 3 months till expiration, exit.
+//   - If empty, invalid or close to expire (within 3 months), generate new secret.
 // 4. Write cert to webhook.
 // 5. Write cert to secret.
 //
@@ -41,12 +41,12 @@ async function run(_bail: (e: Error) => void, _attempt: number) {
   }
 
   const existingCert = await getSecretCertificate(NAMESPACE, SECRET_NAME, kc);
-  if (existingCert && isCertValid(existingCert.certificate)) {
+  if (existingCert && isCertValid(existingCert.certificate) && !isCertExpiring(existingCert.certificate, 90)) {
     logger.info('Valid cert already exists.');
     return;
   }
 
-  const certs = generateCertificates();
+  const certs = generateCertificates(NAMESPACE, 6);
 
   const webhookPatched = patchWebhookCertificate(NAMESPACE, WEBHOOK_NAME, webhookConfig, certs.caCert, kc);
   if (!webhookPatched) {
