@@ -1,16 +1,21 @@
 apiVersion: skaffold/v4beta5
 kind: Config
 metadata:
-  name: webhook-server
+  name: monokle-admission-controller-server
 build:
   artifacts:
     - image: admission-webhook
+      context: ./admission-controller/server
       docker:
-        dockerfile: Dockerfile
+        dockerfile: ./admission-controller/server/Dockerfile
+    - image: admission-webhook-init
+      context: ./admission-controller/init
+      docker:
+        dockerfile: ./admission-controller/init/Dockerfile
 manifests:
   rawYaml:
     - ./k8s/manifests/deployment.yaml
 portForward:
   - resourceType: service
-    resourceName: webhook-server
+    resourceName: monokle-admission-controller-server
     port: 443

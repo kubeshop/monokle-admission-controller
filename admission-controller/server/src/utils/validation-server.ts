@@ -69,12 +69,17 @@ export class ValidationServer {
   ) {
     this._shouldValidate = false;
 
-    this._server = fastify({
-      https: {
-        key: readFileSync(path.join('/run/secrets/tls', 'tls.key')),
-        cert: readFileSync(path.join('/run/secrets/tls', 'tls.crt'))
-      }
-    });
+    try {
+      this._server = fastify({
+        https: {
+          key: readFileSync(path.join('/run/secrets/tls', 'tls.key')),
+          cert: readFileSync(path.join('/run/secrets/tls', 'tls.crt'))
+        }
+      });
+    } catch (err) {
+      this._logger.error({msg: 'Failed to read TLS certificate', err});
+      process.exit(1);
+    }
 
     this._initRouting();
   }

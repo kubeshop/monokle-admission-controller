@@ -1,4 +1,4 @@
-apiVersion: monokle.com/v1alpha1
+apiVersion: monokle.io/v1alpha1
 kind: MonoklePolicyBinding
 metadata:
   name: policy-binding-sample-2
