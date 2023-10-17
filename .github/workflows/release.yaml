@@ -1,0 +1,63 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract version from tag
+        id: extract_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+      - name: Debug version
+        run: echo ${{ env.VERSION }}
+
+      - name: Build and publish Docker image (init container)
+        env:
+          VERSION: ${{ env.VERSION }}
+        run: |
+          echo "Building Docker init image with version: ${VERSION}"
+          docker build -t kubeshop/monokle-admission-controller-init:latest -t kubeshop/monokle-admission-controller-init:${VERSION} ./admission-controller/init/
+          docker push kubeshop/monokle-admission-controller-init:${VERSION}
+          docker push kubeshop/monokle-admission-controller-init:latest
+
+      - name: Build and publish Docker image (server container)
+        env:
+          VERSION: ${{ env.VERSION }}
+        run: |
+          echo "Building Docker server image with version: ${VERSION}"
+          docker build -t kubeshop/monokle-admission-controller-server:latest -t kubeshop/monokle-admission-controller-server:${VERSION} ./admission-controller/server/
+          docker push kubeshop/monokle-admission-controller-server:${VERSION}
+          docker push kubeshop/monokle-admission-controller-server:latest
+
+  create-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
