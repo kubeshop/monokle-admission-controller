@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: monokle-admission-controller-server
+  namespace: {{ include "monokle-admission-controller.namespace" . }}
+  labels:
+    {{- include "monokle-admission-controller.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: monokle-admission-controller-server
+  ports:
+    - port: 443
+      targetPort: webhook-api
