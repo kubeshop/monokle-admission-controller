@@ -1,7 +1,6 @@
 apiVersion: v2
 name: monokle-admission-controller
 description: Monokle Admission Controller Helm Chart
-
 type: application
 version: 0.1.0
 appVersion: "0.1.0"
