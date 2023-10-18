@@ -90,5 +90,5 @@ jobs:
           allowUpdates: true
           artifacts: 'install.yaml,helm.tgz'
           omitBody: true
-        #tag: "v${{ env.VERSION }}"
+          tag: "v${{ env.VERSION }}"
           token: ${{ secrets.CI_BOT_TOKEN }}
