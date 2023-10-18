@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
+  pull_request: # For testing only
 
 jobs:
   build-and-push:
@@ -19,9 +20,14 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Login Helm to DockerHub
+        run: |
+           helm registry login registry-1.docker.io -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin <<< "${{ secrets.DOCKERHUB_TOKEN }}"
+
       - name: Extract version from tag
         id: extract_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+        #run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+        run: echo "VERSION=0.0.1" >> $GITHUB_ENV
 
       - name: Debug version
         run: echo ${{ env.VERSION }}
@@ -32,8 +38,9 @@ jobs:
         run: |
           echo "Building Docker init image with version: ${VERSION}"
           docker build -t kubeshop/monokle-admission-controller-init:latest -t kubeshop/monokle-admission-controller-init:${VERSION} ./admission-controller/init/
-          docker push kubeshop/monokle-admission-controller-init:${VERSION}
-          docker push kubeshop/monokle-admission-controller-init:latest
+          ls -la
+        # docker push kubeshop/monokle-admission-controller-init:${VERSION}
+        # docker push kubeshop/monokle-admission-controller-init:latest
 
       - name: Build and publish Docker image (server container)
         env:
@@ -41,23 +48,34 @@ jobs:
         run: |
           echo "Building Docker server image with version: ${VERSION}"
           docker build -t kubeshop/monokle-admission-controller-server:latest -t kubeshop/monokle-admission-controller-server:${VERSION} ./admission-controller/server/
-          docker push kubeshop/monokle-admission-controller-server:${VERSION}
-          docker push kubeshop/monokle-admission-controller-server:latest
+          ls -la
+        # docker push kubeshop/monokle-admission-controller-server:${VERSION}
+        # docker push kubeshop/monokle-admission-controller-server:latest
 
-  create-release:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v2
-
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
+      # See https://docs.docker.com/docker-hub/oci-artifacts/#push-a-helm-chart
+      - name: Build and publish Helm chart
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
+          VERSION: ${{ env.VERSION }}
+        run: |
+          echo "Building Helm chart with version: ${VERSION}"
+          helm package ./helm --version ${VERSION}
+          ls -la
+        # helm push monokle-admission-controller-${VERSION}.tgz oci://registry-1.docker.io/kubeshop
+
+  # create-release:
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - name: Checkout Repository
+  #       uses: actions/checkout@v2
+
+  #     - name: Create GitHub Release
+  #       id: create_release
+  #       uses: actions/create-release@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.CI_BOT_TOKEN }}
+  #       with:
+  #         tag_name: ${{ github.ref }}
+  #         release_name: Release ${{ github.ref }}
+  #         draft: false
+  #         prerelease: false
