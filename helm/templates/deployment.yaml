@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monokle-admission-controller-server
+  namespace: {{ include "monokle-admission-controller.namespace" . }}
+  labels:
+    app: monokle-admission-controller-server
+    {{- include "monokle-admission-controller.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: monokle-admission-controller-server
+  template:
+    metadata:
+      labels:
+        app: monokle-admission-controller-server
+        {{- include "monokle-admission-controller.labels" . | nindent 8 }}
+    spec:
+      initContainers:
+      - name: init
+        {{- if not .Values.image.init.overridePath }}
+        image: "{{ .Values.image.init.repository }}:{{ .Values.image.init.tag | default .Chart.AppVersion }}"
+        {{- else }}
+        image: {{ .Values.image.init.overridePath }}
+        {{- end }}
+        imagePullPolicy: {{ .Values.image.init.pullPolicy }}
+        env:
+          - name: MONOKLE_NAMESPACE
+            value: {{ include "monokle-admission-controller.namespace" . }}
+      containers:
+      - name: server
+        {{- if not .Values.image.server.overridePath }}
+        image: "{{ .Values.image.server.repository }}:{{ .Values.image.server.tag | default .Chart.AppVersion }}"
+        {{- else }}
+        image: {{ .Values.image.server.overridePath }}
+        {{- end }}
+        imagePullPolicy: {{ .Values.image.server.pullPolicy }}
+        ports:
+        - containerPort: 8443
+          name: webhook-api
+        volumeMounts:
+        - name: webhook-tls-certs
+          mountPath: /run/secrets/tls
+          readOnly: true
+        env:
+          - name: MONOKLE_LOG_LEVEL
+            value: DEBUG
+          - name: MONOKLE_IGNORE_NAMESPACES
+            value: ''
+      volumes:
+      - name: webhook-tls-certs
+        secret:
+          secretName: monokle-admission-controller-tls
+          optional: true
+      serviceAccountName: monokle-policies-sa
