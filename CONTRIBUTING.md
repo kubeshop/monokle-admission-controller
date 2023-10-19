@@ -13,7 +13,7 @@
 Start Minikube (or any other cluster of your choice):
 
 ```bash
-minikube start --uuid 00000000-0000-0000-0000-000000000001 --extra-config=apiserver.enable-admission-plugins=ValidatingAdmissionWebhook
+minikube start --extra-config=apiserver.enable-admission-plugins=ValidatingAdmissionWebhook
 ```
 
 ### Deploying (via Skaffold)

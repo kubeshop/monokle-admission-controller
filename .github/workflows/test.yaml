@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Start Minikube
-        run: minikube start --uuid 00000000-0000-0000-0000-000000000001 --extra-config=apiserver.enable-admission-plugins=ValidatingAdmissionWebhook
+        run: minikube start --extra-config=apiserver.enable-admission-plugins=ValidatingAdmissionWebhook
 
       - name: Deploy Admission Controller
         run: ./scripts/deploy.sh
@@ -54,7 +54,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Start Minikube
-        run: minikube start --uuid 00000000-0000-0000-0000-000000000001 --extra-config=apiserver.enable-admission-plugins=ValidatingAdmissionWebhook
+        run: minikube start --extra-config=apiserver.enable-admission-plugins=ValidatingAdmissionWebhook
 
       - name: Build local images (init container)
         run: eval $(minikube -p minikube docker-env) && minikube image build -t admission-webhook-init -f ./Dockerfile .
