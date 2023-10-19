@@ -79,7 +79,7 @@ Or directly from GitHub release:
 helm install my_release https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.0.2/helm.tgz
 ```
 
-> See [customization section](#) below on what can be customized with Helm variables.
+> See [customization section](#customizing-helm-deployment) below on what can be customized with Helm variables.
 
 ### Kubectl
 
@@ -304,7 +304,12 @@ pod/pod-warning created
 
 ### Customizing Helm deployment
 
-## Architecture
+You can refer to [`helm/values.yaml`](./helm/values.yaml) file to see what can be change for Helm deployment. The most important values:
+
+* `namespace` - namespace to which Monokle Admission Controller will be deployed (defaults to `monokle-admission-controller`). We advise to always deploy it to dedicated namespace.
+* `ignoreNamespaces` - list of namespaces which should be ignored by admission controller (this option has priority over policy bindings). By default. Kubernetes system namespaces and Monokle Admission Controller namespace are ignored.
+* `replicas` - number of admission controller pod server replicas.
+* `image` - admission controller container images related configuration. Allows to use of specific image or tag. However, since image versions are tightly bound with Helm chart version, we do not advise changing this one.
 
 ## Contributing and development
 

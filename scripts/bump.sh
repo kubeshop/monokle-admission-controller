@@ -25,17 +25,17 @@ echo "Updating README file..."
 replace-in-file \
 "kubeshop/monokle-admission-controller --version $current_version" \
 "kubeshop/monokle-admission-controller --version $VERSION" \
-"README.md"
+"$rootdir/README.md"
 
 replace-in-file \
 "https://github.com/kubeshop/monokle-admission-controller/releases/download/v$current_version/helm.tgz" \
 "https://github.com/kubeshop/monokle-admission-controller/releases/download/v$VERSION/helm.tgz" \
-"README.md"
+"$rootdir/README.md"
 
 replace-in-file \
 "https://github.com/kubeshop/monokle-admission-controller/releases/download/v$current_version/install.yaml" \
 "https://github.com/kubeshop/monokle-admission-controller/releases/download/v$VERSION/install.yaml" \
-"README.md"
+"$rootdir/README.md"
 
 echo "Updating Helm Chart version..."
 yq -i ".version = \"$VERSION\"" "$rootdir/helm/Chart.yaml"
