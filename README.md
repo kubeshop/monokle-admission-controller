@@ -71,8 +71,6 @@ helm install my_release oci://registry-1.docker.io/kubeshop/monokle-admission-co
 
 _You can read more about DockerHub OCI registry [here](https://docs.docker.com/docker-hub/oci-artifacts/)_.
 
-> **IMPORTANT**: Keep in mind that for Helm versions prior to v3.8.0, OCI support needs to be enabled as [described here](https://helm.sh/docs/topics/registries/#enabling-oci-support-prior-to-v380).
-
 Or directly from GitHub release:
 
 ```bash
