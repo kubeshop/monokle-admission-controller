@@ -41,7 +41,7 @@ describe(`All (dir: ${mainDir})`, () => {
 
   it('creates resource (valid) with no warnings when policy defined for namespace', async () => {
     await run(`cd "${mainDir}" && kubectl apply -f examples/policy-sample-1.yaml`);
-    await run(`cd "${mainDir}" && kubectl apply -f examples/policy-binding-sample-2.yaml`);
+    await run(`cd "${mainDir}" && kubectl apply -f examples/policy-binding-sample-2.yaml`, 500);
 
     const output = await run(`cd "${mainDir}" && kubectl -n default apply -f examples/pod-valid.yaml`);
 
@@ -52,7 +52,7 @@ describe(`All (dir: ${mainDir})`, () => {
 
   it('creates resource (misconfigured) with warnings when policy defined for namespace', async () => {
     await run(`cd "${mainDir}" && kubectl apply -f examples/policy-sample-2.yaml`);
-    await run(`cd "${mainDir}" && kubectl apply -f examples/policy-binding-sample-3.yaml`);
+    await run(`cd "${mainDir}" && kubectl apply -f examples/policy-binding-sample-3.yaml`, 500);
 
     const output = await run(`cd "${mainDir}" && kubectl -n nstest1 apply -f examples/pod-warning.yaml`);
 
@@ -66,7 +66,7 @@ describe(`All (dir: ${mainDir})`, () => {
 
   it('creates resource (valid) with no warnings when policy defined globally', async () => {
     await run(`cd "${mainDir}" && kubectl apply -f examples/policy-sample-1.yaml`);
-    await run(`cd "${mainDir}" && kubectl apply -f examples/policy-binding-sample-1.yaml`);
+    await run(`cd "${mainDir}" && kubectl apply -f examples/policy-binding-sample-1.yaml`, 500);
 
     const output = await run(`cd "${mainDir}" && kubectl -n default apply -f examples/pod-valid.yaml`);
 
@@ -77,7 +77,7 @@ describe(`All (dir: ${mainDir})`, () => {
 
   it('creates resource (misconfigured) with warnings when policy defined globally', async () => {
     await run(`cd "${mainDir}" && kubectl apply -f examples/policy-sample-1.yaml`);
-    await run(`cd "${mainDir}" && kubectl apply -f examples/policy-binding-sample-1.yaml`);
+    await run(`cd "${mainDir}" && kubectl apply -f examples/policy-binding-sample-1.yaml`, 500);
 
     const output = await run(`cd "${mainDir}" && kubectl -n nstest2 apply -f examples/pod-errors.yaml`);
 
@@ -93,12 +93,16 @@ describe(`All (dir: ${mainDir})`, () => {
   });
 });
 
-const run = async (command: string): Promise<string> => {
+const run = async (command: string, timeoutMs?: number): Promise<string> => {
   return new Promise((resolve, reject) => {
-    shell.exec(command, {async: true, silent: true}, (code, stdout, stderr) => {
+    shell.exec(command, {async: true, silent: true}, async (code, stdout, stderr) => {
 
       VERBOSE && console.log('stdout', stdout);
       VERBOSE && console.log('stderr', stderr);
+
+      if (timeoutMs) {
+        await sleep(timeoutMs);
+      }
 
       if (code !== 0) {
         reject(stderr);
