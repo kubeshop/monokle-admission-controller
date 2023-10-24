@@ -1,10 +1,33 @@
-FROM node:18.16.0-bullseye-slim
+ARG BUILD_IMAGE="node:20.8-alpine"
+ARG PRODUCTION_IMAGE="node:20.8-alpine"
 
-WORKDIR /workdir
+#####################
+# Compile container
+#####################
+FROM $BUILD_IMAGE AS compileContainer
+
+WORKDIR /build
+
 COPY package*.json ./
 RUN npm ci --ignore-scripts
 
-COPY ./src ./src
-COPY ./tsconfig.json ./
+COPY . .
+RUN npm run build
 
-CMD ["npm", "run", "prod"]
+
+#####################
+# Final container
+#####################
+FROM $PRODUCTION_IMAGE
+
+LABEL AUTHOR="Krzysztof Krztoń <krzysztof@kubeshop.io>"
+LABEL DESCRIPTION="Monokle Admission Controller - Server Init Container"
+
+WORKDIR /service
+
+COPY package*.json ./
+COPY --from=compileContainer /build/dist .
+
+RUN npm ci --only=production --ignore-scripts
+
+CMD ["/usr/local/bin/node", "index.js"]
