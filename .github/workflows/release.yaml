@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
+  pull_request: # For testing only
 
 jobs:
   build-and-push:
@@ -12,10 +13,15 @@ jobs:
     steps:
       - name: Extract version from tag
         id: extract_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+        run: echo "VERSION=0.0.3" >> $GITHUB_ENV
+        # run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
       - name: Debug version
         run: echo ${{ env.VERSION }}
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
 
       - name: Login to DockerHub
         uses: docker/login-action@v1
@@ -30,23 +36,25 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Build and publish Docker image (init container)
-        env:
-          VERSION: ${{ env.VERSION }}
-        run: |
-          echo "Building Docker init image with version: ${VERSION}"
-          docker build -t kubeshop/monokle-admission-controller-init:latest -t kubeshop/monokle-admission-controller-init:${VERSION} ./admission-controller/init/
-          docker push kubeshop/monokle-admission-controller-init:${VERSION}
-          docker push kubeshop/monokle-admission-controller-init:latest
+      - name: Build image and push to Docker Hub (init container)
+        uses: docker/build-push-action@v4
+        with:
+          context: ./admission-controller/init/
+          file: ./admission-controller/init/Dockerfile
+          tags: |
+            kubeshop/monokle-admission-controller-init:latest
+            kubeshop/monokle-admission-controller-init:${{ env.VERSION }}
+          push: true
 
-      - name: Build and publish Docker image (server container)
-        env:
-          VERSION: ${{ env.VERSION }}
-        run: |
-          echo "Building Docker server image with version: ${VERSION}"
-          docker build -t kubeshop/monokle-admission-controller-server:latest -t kubeshop/monokle-admission-controller-server:${VERSION} ./admission-controller/server/
-          docker push kubeshop/monokle-admission-controller-server:${VERSION}
-          docker push kubeshop/monokle-admission-controller-server:latest
+      - name: Build image and push to Docker Hub (server container)
+        uses: docker/build-push-action@v4
+        with:
+          context: ./admission-controller/server/
+          file: ./admission-controller/server/Dockerfile
+          tags: |
+            kubeshop/monokle-admission-controller-server:latest
+            kubeshop/monokle-admission-controller-server:${{ env.VERSION }}
+          push: true
 
       # See https://docs.docker.com/docker-hub/oci-artifacts/#push-a-helm-chart
       - name: Build and publish Helm chart
@@ -64,7 +72,8 @@ jobs:
     steps:
       - name: Extract version from tag
         id: extract_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+        run: echo "VERSION=0.0.3" >> $GITHUB_ENV
+        # run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
       - name: Debug version
         run: echo ${{ env.VERSION }}
