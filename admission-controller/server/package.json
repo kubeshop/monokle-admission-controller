@@ -9,8 +9,8 @@
     "start": "node ./dist/index.js",
     "prod": "npm run build && npm run start"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Kubeshop",
+  "license": "MIT",
   "dependencies": {
     "@kubernetes/client-node": "^0.19.0",
     "@monokle/parser": "0.2.0",
