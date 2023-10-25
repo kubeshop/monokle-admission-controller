@@ -66,7 +66,7 @@ kubectl -n monokle-admission-controller get all,CustomResourceDefinition,Validat
 Monokle Admission controller can be installed directly from DockerHub OCI registry:
 
 ```bash
-helm install my_release oci://registry-1.docker.io/kubeshop/monokle-admission-controller --version 0.0.2
+helm install my_release oci://registry-1.docker.io/kubeshop/monokle-admission-controller --version 0.1.0
 ```
 
 _You can read more about DockerHub OCI registry [here](https://docs.docker.com/docker-hub/oci-artifacts/)_.
@@ -74,7 +74,7 @@ _You can read more about DockerHub OCI registry [here](https://docs.docker.com/d
 Or directly from GitHub release:
 
 ```bash
-helm install my_release https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.0.2/helm.tgz
+helm install my_release https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.1.0/helm.tgz
 ```
 
 > See [customization section](#customizing-helm-deployment) below on what can be customized with Helm variables.
@@ -84,7 +84,7 @@ helm install my_release https://github.com/kubeshop/monokle-admission-controller
 You can install Monokle Admission Controller using `kubectl` and dedicated install manifest:
 
 ```bash
-kubectl apply -f https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.0.2/install.yaml
+kubectl apply -f https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.1.0/install.yaml
 ```
 
 ## Usage
