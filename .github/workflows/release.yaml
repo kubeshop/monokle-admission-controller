@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
-  pull_request: # For testing only
 
 jobs:
 
@@ -19,8 +18,7 @@ jobs:
     steps:
       - name: Extract version from tag
         id: extract_version
-        run: echo "VERSION=0.0.4" >> $GITHUB_ENV
-        # run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
       - name: Debug version
         run: echo ${{ env.VERSION }}
@@ -70,8 +68,7 @@ jobs:
     steps:
       - name: Extract version from tag
         id: extract_version
-        run: echo "VERSION=0.0.4" >> $GITHUB_ENV
-        # run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
       - name: Debug version
         run: echo ${{ env.VERSION }}
@@ -100,8 +97,7 @@ jobs:
     steps:
       - name: Extract version from tag
         id: extract_version
-        run: echo "VERSION=0.0.4" >> $GITHUB_ENV
-        # run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
       - name: Debug version
         run: echo ${{ env.VERSION }}
@@ -125,4 +121,3 @@ jobs:
           artifacts: 'install.yaml,helm.tgz'
           omitBody: true
           token: ${{ secrets.CI_BOT_TOKEN }}
-          tag: ${{ env.VERSION }} # For testing only
