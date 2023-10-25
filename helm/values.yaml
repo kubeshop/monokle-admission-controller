@@ -1,13 +1,13 @@
 image:
   init:
-    repository: monokle-admission-controller-init
+    repository: docker.io/kubeshop/monokle-admission-controller-init
     pullPolicy: IfNotPresent
     # Override the image tag whose default is the chart appVersion.
     tag: ""
     # Override entire image path.
     overridePath: ""
   server:
-    repository: monokle-admission-controller-server
+    repository: docker.io/kubeshop/monokle-admission-controller-server
     pullPolicy: IfNotPresent
     # Override the image tag whose default is the chart appVersion.
     tag: ""

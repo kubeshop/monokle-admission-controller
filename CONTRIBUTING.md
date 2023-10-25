@@ -168,6 +168,23 @@ kubectl apply -f examples/pod-warning.yaml
 kubectl apply -f examples/pod-errors.yaml
 ```
 
+## Releasing
+
+Releasing is mostly done automatically with `Release` CI job. To trigger the release, bump project version:
+
+```bash
+./script/bump.sh A.B.C
+```
+
+This will bump init and server node packages version and helm chart versions. Commit it and create `vA.B.C` tag. Then it needs to be pushed to remote:
+
+```bash
+git push origin main
+git push origin vA.B.C
+```
+
+Release job is triggered when new tag is pushed. It will build everything, push to dockerhub and create GitHub release.
+
 ## Refs
 
 * https://kubernetes.io/blog/2019/03/21/a-guide-to-kubernetes-admission-controllers/

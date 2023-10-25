@@ -8,8 +8,8 @@
     "test": "vitest run",
     "build": "tsc -p tsconfig.json"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Kubeshop",
+  "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.1.7",
     "@types/shelljs": "^0.8.13",
