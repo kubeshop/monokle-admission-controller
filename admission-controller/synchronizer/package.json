@@ -5,12 +5,10 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "start": "node ./dist/index.js",
-    "prod": "npm run build && npm run start"
+    "build": "tsc -p tsconfig.json"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Kubeshop",
+  "license": "MIT",
   "dependencies": {
     "@kubernetes/client-node": "^0.18.1",
     "pino": "^8.15.1"
