@@ -30,3 +30,7 @@ namespace: monokle-admission-controller
 ignoreNamespaces:
 #   - ns1
 #   - ns2
+
+logLevel: WARN
+
+cloudApiUrl: ""

@@ -5,7 +5,8 @@ import {ValidatorManager} from './utils/validator-manager.js';
 import {ValidationServer} from './utils/validation-server.js';
 
 const LOG_LEVEL = (process.env.MONOKLE_LOG_LEVEL || 'warn').toLowerCase();
-const IGNORED_NAMESPACES = (process.env.MONOKLE_IGNORE_NAMESPACES || '').split(',');
+const NAMESPACE = (process.env.MONOKLE_NAMESPACE || 'monokle-admission-controller');
+const IGNORED_NAMESPACES = (process.env.MONOKLE_IGNORE_NAMESPACES || '').split(',').filter(Boolean);
 
 const logger = pino({
   name: 'Monokle',

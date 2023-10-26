@@ -1,7 +1,7 @@
 import pino from 'pino';
 import path from 'path';
 import k8s from '@kubernetes/client-node';
-import {createDefaultMonokleFetcher} from '@monokle/synchronizer';
+import {Fetcher, ApiHandler} from '@monokle/synchronizer';
 import {getNamespaceInformer} from './utils/get-informer.js';
 import {NamespaceListener} from './utils/namespace-listener.js';
 import {readToken} from './utils/read-token.js';
@@ -9,7 +9,10 @@ import {getClusterQuery, ClusterQueryResponse} from './utils/queries.js';
 import {PolicyUpdater} from './utils/policy-updater.js';
 
 const LOG_LEVEL = (process.env.MONOKLE_LOG_LEVEL || 'warn').toLowerCase();
-// const IGNORED_NAMESPACES = (process.env.MONOKLE_IGNORE_NAMESPACES || '').split(','); // @TODO is this needed?
+const NAMESPACE = (process.env.MONOKLE_NAMESPACE || 'monokle-admission-controller');
+const IGNORED_NAMESPACES = (process.env.MONOKLE_IGNORE_NAMESPACES || '').split(',').filter(Boolean);
+const CLOUD_API_URL = process.env.MONOKLE_CLOUD_API_URL ?? '';
+
 const COMMUNICATION_INTERVAL_SEC = 15;
 
 const logger = pino({
@@ -23,7 +26,9 @@ const tokenPath = path.join('/run/secrets/token', '.token');
   const kc = new k8s.KubeConfig();
   kc.loadFromCluster();
 
-  const apiFetcher = createDefaultMonokleFetcher();
+  const apiFetcher = new Fetcher(
+    new ApiHandler(CLOUD_API_URL),
+  );
   const policyUpdater = new PolicyUpdater(kc);
 
   const namespaceInformer = await getNamespaceInformer(
