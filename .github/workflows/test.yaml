@@ -25,6 +25,10 @@ jobs:
         working-directory: ./tests/
         run: npm ci
 
+      - name: Install Dependencies (Synchronizer)
+        working-directory: ./admission-controller/synchronizer/
+        run: npm ci
+
       - name: Test
         working-directory: ./tests/
         run: npm run test:unit
