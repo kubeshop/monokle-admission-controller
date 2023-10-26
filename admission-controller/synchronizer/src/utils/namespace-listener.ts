@@ -3,6 +3,7 @@ import {V1Namespace} from '@kubernetes/client-node';
 import {InformerWrapper} from './get-informer.js';
 
 export class NamespaceListener {
+  private _isRunning = false;
   private _namespaces = new Set<V1Namespace>();
 
   constructor(
@@ -14,12 +15,22 @@ export class NamespaceListener {
     this._namespaceInformer.informer.on('delete', this.onNamespaceRemoval.bind(this));
   }
 
+  get isRunning(): boolean {
+    return this._isRunning;
+  }
+
   get namespaces(): string[] {
     return Array.from(this._namespaces).map(namespace => namespace.metadata!.name!);
   }
 
   async start() {
     await this._namespaceInformer.start();
+    this._isRunning = true;
+  }
+
+  async stop() {
+    await this._namespaceInformer.stop();
+    this._isRunning = false;
   }
 
   private onNamespace(namespace: V1Namespace) {

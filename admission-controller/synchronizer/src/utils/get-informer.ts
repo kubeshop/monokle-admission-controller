@@ -16,15 +16,21 @@ export type InformerWrapper<TValue extends k8s.KubernetesObject> = {
 
 const ERROR_RESTART_INTERVAL = 500;
 
-export async function getNamespaceInformer(onError?: k8s.ErrorCallback) {
-  const client = await getClient();
-  return getInformer<k8s.V1Namespace>('api', '', 'v1', 'namespaces', () => client.listNamespace(), onError);
+export async function getNamespaceInformer(config : k8s.KubeConfig, onError?: k8s.ErrorCallback) {
+  const client = config.makeApiClient(k8s.CoreV1Api)
+  return getInformer<k8s.V1Namespace>('api', '', 'v1', 'namespaces', () => client.listNamespace(), config, onError);
 }
 
 export async function getInformer<TValue extends k8s.KubernetesObject>(
-  apiPrefix: 'api' | 'apis', group: string, version: string, plural: string, listFn: ListFn<TValue>, onError?: k8s.ErrorCallback
+  apiPrefix: 'api' | 'apis',
+  group: string,
+  version: string,
+  plural: string,
+  listFn: ListFn<TValue>,
+  config : k8s.KubeConfig,
+  onError?: k8s.ErrorCallback
 ): Promise<InformerWrapper<TValue>> {
-  const informer = await createInformer<TValue>(apiPrefix, group, version, plural, listFn, onError);
+  const informer = await createInformer<TValue>(apiPrefix, group, version, plural, listFn, config, onError);
   const start = createInformerStarter(informer, onError);
   const stop = () => informer.stop();
 
@@ -52,25 +58,16 @@ function createInformerStarter(informer: Informer<any>, onError?: k8s.ErrorCallb
   }
 }
 
-async function getClient() {
-  const kc = new k8s.KubeConfig();
-  kc.loadFromCluster();
-
-  return kc.makeApiClient(k8s.CoreV1Api)
-}
-
 async function createInformer<TValue extends k8s.KubernetesObject>(
   apiPrefix: 'api' | 'apis',
   group: string,
   version: string,
   plural: string,
   listFn: ListFn<TValue>,
+  config : k8s.KubeConfig,
   onError?: k8s.ErrorCallback
 ) {
-  const kc = new k8s.KubeConfig();
-  kc.loadFromCluster();
-
-  const informer = k8s.makeInformer<TValue>(kc, `/${apiPrefix}${group ? `/${group}` : ''}/${version}/${plural}`, listFn as any);
+  const informer = k8s.makeInformer<TValue>(config, `/${apiPrefix}${group ? `/${group}` : ''}/${version}/${plural}`, listFn as any);
 
   informer.on('error', (err) => {
     if (onError) {
