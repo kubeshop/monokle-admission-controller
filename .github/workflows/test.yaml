@@ -9,6 +9,26 @@ on:
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
+  test-unit:
+    name: Unit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 18
+
+      - name: Checkout Repo
+        uses: actions/checkout@v2
+
+      - name: Install Dependencies
+        working-directory: ./tests/
+        run: npm ci
+
+      - name: Test
+        working-directory: ./tests/
+        run: npm run test:unit
+
   test-skaffold:
     name: Skaffold
     runs-on: ubuntu-latest
@@ -39,7 +59,7 @@ jobs:
 
       - name: Test
         working-directory: ./tests/
-        run: npm test
+        run: npm run test:e2e
 
   test-helm:
     name: Helm
@@ -98,4 +118,4 @@ jobs:
 
       - name: Test
         working-directory: ./tests/
-        run: MONOKLE_NAMESPACE=mac-test npm test
+        run: MONOKLE_NAMESPACE=mac-test npm run test:e2e

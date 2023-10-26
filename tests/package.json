@@ -5,8 +5,8 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "test": "vitest run",
-    "build": "tsc -p tsconfig.json"
+    "test:unit": "vitest run unit",
+    "test:e2e": "vitest run e2e"
   },
   "author": "Kubeshop",
   "license": "MIT",
