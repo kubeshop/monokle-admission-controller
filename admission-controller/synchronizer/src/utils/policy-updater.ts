@@ -1,5 +1,5 @@
-import {isEqual} from "lodash";
 import k8s from '@kubernetes/client-node';
+import _ from "lodash";
 import {ClusterQueryResponseBinding, ClusterQueryResponseBindingPolicy} from "./queries";
 
 export class PolicyUpdater {
@@ -19,7 +19,7 @@ export class PolicyUpdater {
       if (!this._policiesCache.has(policy.id)) {
         await this.createPolicy(policy);
         this._policiesCache.set(policy.id, policy);
-      } else if (!isEqual(this._policiesCache.get(policy.id), policy)) {
+      } else if (!_.isEqual(this._policiesCache.get(policy.id), policy)) {
         await this.updatePolicy(policy);
         this._policiesCache.set(policy.id, policy);
       }
@@ -118,6 +118,6 @@ export class PolicyUpdater {
     const binding2Copy = { ...binding2 };
     (binding2Copy as any).policy = { id: binding2.policy.id };
 
-    return isEqual(binding1Copy, binding2Copy);
+    return _.isEqual(binding1Copy, binding2Copy);
   }
 }

@@ -1,3 +1,4 @@
+{{- if .Values.automationToken }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -43,3 +44,4 @@ spec:
         secret:
           secretName: monokle-synchronizer-token
       serviceAccountName: monokle-policies-synchronizer-sa
+{{- end }}

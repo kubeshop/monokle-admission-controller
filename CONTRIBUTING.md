@@ -19,26 +19,10 @@ minikube start --extra-config=apiserver.enable-admission-plugins=ValidatingAdmis
 ### Deploying (via Skaffold)
 
 ```bash
-./scripts/deploy.sh
+./scripts/dev-standalone.sh
 ```
 
-After changes in `./admission-controller` can be reloaded with:
-
-```bash
-skaffold dev -f scripts/skaffold.yaml
-```
-
-You can also do manual clean-up and re-run `deploy.sh` script again:
-
-```bash
-kubectl delete all -n monokle-admission-controller --all && \
-kubectl delete validatingwebhookconfiguration.admissionregistration.k8s.io/monokle-admission-controller-webhook && \
-kubectl delete namespace monokle-admission-controller && \
-kubectl delete namespace nstest1 && \
-kubectl delete namespace nstest2 && \
-kubectl delete crd policies.monokle.io && \
-kubectl delete crd policybindings.monokle.io
-```
+This will run a watcher and reload any time `./admission-controller/*` folder changes.
 
 ### Deploying (via Helm + Minikube registry)
 

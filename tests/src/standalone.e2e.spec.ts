@@ -17,7 +17,7 @@ describe(`All (dir: ${mainDir})`, () => {
       return result.includes('monokle-admission-controller-server') && result.includes('Running');
     }, 60 * 1000);
 
-    await waitForResult(`kubectl -n ${NAMESPACE} logs -l app=monokle-admission-controller-server --tail 100`, (result) => {
+    await waitForResult(`kubectl -n ${NAMESPACE} logs -l app=monokle-admission-controller-server --tail 250`, (result) => {
       return result.includes('Server listening at');
     }, 60 * 1000);
 

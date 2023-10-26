@@ -10,9 +10,11 @@ basedir="$(dirname "$0")"
 helm template "${basedir}/../helm" \
 --set image.init.overridePath=admission-webhook-init \
 --set image.server.overridePath=admission-webhook \
---set image.synchronizer.overridePath=admission-synchronizer > "${basedir}/install.yaml"
+--set image.synchronizer.overridePath=admission-synchronizer \
+--set logLevel=debug \
+--set automationToken=SAMPLE_TOKEN > "${basedir}/install.yaml"
 
 # Run deployment through skaffold with locally build images
-skaffold run -n monokle-admission-controller -f "${basedir}/skaffold.yaml"
+skaffold run -f "${basedir}/skaffold.yaml"
 
 echo "Deployment complete."
