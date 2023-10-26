@@ -50,7 +50,7 @@ const tokenPath = path.join('/run/secrets/token', '.token');
     const token = readToken(tokenPath, logger);
 
     if (!token) {
-      logger.warn({msg: 'Informer: No secret with Automation token found'});
+      logger.warn({msg: 'No secret with Automation token found'});
       return;
     }
 
@@ -71,6 +71,9 @@ const tokenPath = path.join('/run/secrets/token', '.token');
         throw new Error('No cluster data found in API response');
       }
 
+      // @TODO recreate policy CRDs if needed
+      await policyUpdater.update(clusterData.data.getCluster.cluster.bindings);
+
       shouldSyncNamespaces = clusterData.data.getCluster.cluster.namespaceSync;
 
       if (shouldSyncNamespaces && !namespaceListener.isRunning) {
@@ -78,15 +81,12 @@ const tokenPath = path.join('/run/secrets/token', '.token');
       } else if (!shouldSyncNamespaces && namespaceListener.isRunning) {
         await namespaceListener.stop();
       }
-
-      // @TODO recreate policy CRDs if needed
-      // policyUpdater.update(clusterData.data.getCluster.cluster.bindings);
     } catch (err: any) {
-      logger.error({msg: 'Informer: Error', err: err.message, body: err.body});
+      logger.error({msg: 'Error: Policy update', err: err.message, body: err.body});
     }
 
     try {
-      if (shouldSyncNamespaces) {
+      if (shouldSyncNamespaces) { // @TODO it's a heartbeat so should be send anyways
         const namespaces = namespaceListener.namespaces;
 
         logger.debug({msg: 'Sending namespaces', namespaces});
@@ -94,7 +94,7 @@ const tokenPath = path.join('/run/secrets/token', '.token');
         // @TODO send namespaces to cloud
       }
     } catch (err: any) {
-      logger.error({msg: 'Informer: Error', err: err.message, body: err.body});
+      logger.error({msg: 'Error: Namespace update', err: err.message, body: err.body});
     }
 
     hasPendingQuery = false;

@@ -1,25 +1,30 @@
 import {ValidationConfig} from "@monokle/types";
 
 export const getClusterQuery = `
-  query getCluster() {
-    cluster {
-      id
-      name
-      namespaceSync
-
-      namespaces {
+  query getCluster {
+    getCluster {
+      cluster {
         id
         name
-      }
+        namespaceSync
 
-      bindings {
-        id
-        mode
-        namespaces
-        policy {
+        namespaces {
           id
-          content
-          projectId
+          name
+        }
+
+        bindings {
+          id
+          mode
+          namespaces {
+            id
+            name
+          }
+          policy {
+            id
+            content
+            projectId
+          }
         }
       }
     }
