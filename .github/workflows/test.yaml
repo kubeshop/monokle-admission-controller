@@ -129,4 +129,4 @@ jobs:
 
       - name: Test
         working-directory: ./tests/
-        run: MONOKLE_NAMESPACE=mac-test npm run test:e2e
+        run: MONOKLE_NAMESPACE=mac-test npm run test standalone
