@@ -57,7 +57,7 @@ jobs:
         run: minikube start --extra-config=apiserver.enable-admission-plugins=ValidatingAdmissionWebhook
 
       - name: Deploy Admission Controller
-        run: ./scripts/deploy-${{ matrix.type }}.sh
+        run: ./scripts/deploy-${{ matrix.type }}.sh host.minikube.internal:5000
 
       - name: Preview namespace state
         run: kubectl -n monokle-admission-controller get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets
