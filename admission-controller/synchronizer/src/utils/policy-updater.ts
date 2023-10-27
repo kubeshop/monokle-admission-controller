@@ -15,6 +15,24 @@ export class PolicyUpdater {
 
   async update(bindings: ClusterQueryResponseBinding[]) {
     const policies = bindings.map((binding) => binding.policy);
+
+    const existingPolicyIds = Array.from(this._policiesCache.keys());
+    const existingBindingIds = Array.from(this._bindingsCache.keys());
+    const newPolicyIds = policies.map((policy) => policy.id);
+    const newBindingIds = bindings.map((binding) => binding.id);
+    const removedPolicyIds = _.difference(existingPolicyIds, newPolicyIds);
+    const removedBindingIds = _.difference(existingBindingIds, newBindingIds);
+
+    for (const removedBindingId of removedBindingIds) {
+      this.deleteBinding(removedBindingId);
+      this._bindingsCache.delete(removedBindingId);
+    }
+
+    for (const removedPolicyId of removedPolicyIds) {
+      this.deletePolicy(removedPolicyId);
+      this._policiesCache.delete(removedPolicyId);
+    }
+
     for (const policy of policies) {
       if (!this._policiesCache.has(policy.id)) {
         await this.createPolicy(policy);
@@ -34,6 +52,15 @@ export class PolicyUpdater {
         this._bindingsCache.set(binding.id, binding);
       }
     }
+  }
+
+  protected async deletePolicy(policyId: string) {
+    await this._k8sClient.deleteClusterCustomObject(
+      'monokle.io',
+      'v1alpha1',
+      'policies',
+      policyId
+    )
   }
 
   protected async createPolicy(policy: ClusterQueryResponseBindingPolicy) {
@@ -66,6 +93,15 @@ export class PolicyUpdater {
         },
         spec: policy.content
       }
+    )
+  }
+
+  protected async deleteBinding(bindingId: string) {
+    await this._k8sClient.deleteClusterCustomObject(
+      'monokle.io',
+      'v1alpha1',
+      'policybindings',
+      bindingId
     )
   }
 

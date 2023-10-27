@@ -71,7 +71,6 @@ const tokenPath = path.join('/run/secrets/token', '.token');
         throw new Error('No cluster data found in API response');
       }
 
-      // @TODO recreate policy CRDs if needed
       await policyUpdater.update(clusterData.data.getCluster.cluster.bindings);
 
       shouldSyncNamespaces = clusterData.data.getCluster.cluster.namespaceSync;
@@ -86,7 +85,7 @@ const tokenPath = path.join('/run/secrets/token', '.token');
     }
 
     try {
-      if (shouldSyncNamespaces) { // @TODO it's a heartbeat so should be send anyways
+      if (shouldSyncNamespaces) {
         const namespaces = namespaceListener.namespaces;
 
         logger.debug({msg: 'Sending namespaces', namespaces});
