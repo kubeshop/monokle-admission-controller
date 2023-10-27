@@ -11,7 +11,7 @@ const mainDir = resolve(join(currentDir, '..', '..'));
 // IMPORTANT: As a prerequisite to run this tests, you need to have a cluster running, configured with your kubectl
 // and Monokle Admission Controller deployed there as described in the README.md file.
 
-describe(`All (dir: ${mainDir})`, () => {
+describe(`Standalone (dir: ${mainDir})`, () => {
   beforeAll(async () => {
     await waitForResult(`kubectl -n ${NAMESPACE} get pod`, (result) => {
       return result.includes('monokle-admission-controller-server') && result.includes('Running');

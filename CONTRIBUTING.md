@@ -63,7 +63,7 @@ helm uninstall monokle-ac
 Namespaced resources (webhook server) will be deployed to dedicated `monokle-admission-controller` namespace, to watch it you can run:
 
 ```bash
-watch kubectl -n monokle-admission-controller get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets
+watch kubectl -n monokle-admission-controller get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets,policies,policybindings
 ```
 
 After it runs, the result should be something like:

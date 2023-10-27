@@ -5,7 +5,7 @@ import {Fetcher, ApiHandler} from '@monokle/synchronizer';
 import {getNamespaceInformer} from './utils/get-informer.js';
 import {NamespaceListener} from './utils/namespace-listener.js';
 import {readToken} from './utils/read-token.js';
-import {getClusterQuery, ClusterQueryResponse} from './utils/queries.js';
+import {getClusterQuery, ClusterQueryResponse, clusterDiscoveryMutation} from './utils/queries.js';
 import {PolicyUpdater} from './utils/policy-updater.js';
 
 const LOG_LEVEL = (process.env.MONOKLE_LOG_LEVEL || 'warn').toLowerCase();
@@ -92,6 +92,8 @@ const tokenPath = path.join('/run/secrets/token', '.token');
         logger.debug({msg: 'Sending namespaces', namespaces});
 
         // @TODO send namespaces to cloud
+      } else {
+        const heartbeatResponse = await apiFetcher.query<any>(clusterDiscoveryMutation, {version: '0.1.0'});
       }
     } catch (err: any) {
       logger.error({msg: 'Error: Namespace update', err: err.message, body: err.body});

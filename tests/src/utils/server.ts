@@ -1,78 +1,15 @@
-import {Server} from 'http';
+import {IncomingMessage, Server, ServerResponse} from 'http';
 import express, {Request, Response, Application} from 'express';
 import cors from 'cors';
-import {mockServer} from '@graphql-tools/mock';
+import _ from 'lodash';
+import {RESPONSE_MOCK} from './response-mocks.js';
 
-const schema = `
-  scalar JSON
-
-  scalar DateTime
-
-  type ClusterBindingModel {
-    clusterId: String!
-    id: String!
-    mode: String!
-    policyId: String!
-
-    namespaces: [ClusterNamespaceModel!]!
-    policy: ClusterBindingPolicyModel!
-  }
-
-  type ClusterBindingPolicyModel {
-    id: String!
-    content: JSON!
-    projectId: String!
-  }
-
-  type ClusterNamespaceModel {
-    id: String!
-    name: String!
-  }
-
-  type ClusterModel {
-    apiKey: String!
-    createdAt: DateTime!
-    description: String
-    id: String!
-    name: String!
-    namespaceSync: Boolean!
-    organizationId: String!
-    updatedAt: DateTime
-    version: String
-
-    namespaces: [ClusterNamespaceModel!]!
-    bindings: [ClusterBindingModel!]!
-  }
-
-  type Cluster {
-    cluster: ClusterModel!
-  }
-
-  type Query {
-    getCluster: Cluster!
-  }
-`;
-
-const DEFAULT_POLICY = {
-  plugins: {
-    'open-policy-agent': true
-  }
-};
-
-export function startMockServer(host = '0.0.0.0', port = 5000): Promise<Server> {
+export function startMockServer(responseMock: 'empty' | 'emptySync' | 'dataAllow' | 'dataBlock' = 'dataAllow', host = '0.0.0.0', port = 5000): Promise<Server> {
   const HOST = process.env.MOCK_HOST ?? host;
   const PORT = process.env.MOCK_PORT ? parseInt(process.env.MOCK_PORT, 10) : port;
-
   const apiMock: Application = express();
-  const graphqlMock = mockServer(schema, {
-    JSON: () => (DEFAULT_POLICY),
-    ClusterNamespaceModel: () => (
-      {
-        id: '1',
-        name: 'default'
-      }
-    )
-  }, false);
+
+  let serverInstance: Server<typeof IncomingMessage, typeof ServerResponse>;
 
   apiMock.use(cors())
   apiMock.use(express.json());
@@ -84,19 +21,26 @@ export function startMockServer(host = '0.0.0.0', port = 5000): Promise<Server> 
   apiMock.post('/graphql', async (req: Request, res: Response) => {
     const token = req.get('Authorization');
     const body = req.body;
+    const responseData = RESPONSE_MOCK[responseMock];
 
-    console.log('API-MOCK', token, body);
+    console.log('API-MOCK:Request', token, body, JSON.stringify(responseData));
 
-    const response = await graphqlMock.query(body.query, body.variables);
+    if (serverInstance) {
+      serverInstance.emit('requestReceived', {
+        token,
+        body,
+        response: responseData
+      });
+    }
 
-    console.log('API-MOCK', JSON.stringify(response));
-
-    res.send(response);
+    res.send(responseData);
   });
 
   return new Promise((resolve) => {
     const server = apiMock.listen(PORT, HOST, () => {
       console.log(`API-MOCK: Test server running on ${HOST}:${PORT}.`);
+
+      serverInstance = server;
 
       server.on('close', () => {
         console.log('API-MOCK: Test server closed.');
@@ -106,5 +50,3 @@ export function startMockServer(host = '0.0.0.0', port = 5000): Promise<Server> 
     });
   });
 }
-
-startMockServer();

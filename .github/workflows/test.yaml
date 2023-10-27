@@ -36,6 +36,11 @@ jobs:
   test-skaffold:
     name: Skaffold
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        type: [standalone, cloud]
+
     steps:
       - name: Setup Skaffold
         run: curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 && sudo install skaffold /usr/local/bin/
@@ -52,7 +57,7 @@ jobs:
         run: minikube start --extra-config=apiserver.enable-admission-plugins=ValidatingAdmissionWebhook
 
       - name: Deploy Admission Controller
-        run: ./scripts/deploy-standalone.sh
+        run: ./scripts/deploy-${{ matrix.type }}.sh
 
       - name: Preview namespace state
         run: kubectl -n monokle-admission-controller get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets
@@ -63,11 +68,12 @@ jobs:
 
       - name: Test
         working-directory: ./tests/
-        run: npm run test:e2e
+        run: npm test "${{ matrix.type }}"
 
   test-helm:
     name: Helm
     runs-on: ubuntu-latest
+    needs: [test-unit, test-skaffold]
     strategy:
       fail-fast: true
       matrix:
