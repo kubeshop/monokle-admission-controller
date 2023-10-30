@@ -8,4 +8,4 @@ spec:
   matchResources:
     namespaceSelector:
       matchLabels:
-        namespace: nstest1
+        name: nstest1
