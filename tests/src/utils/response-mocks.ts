@@ -46,16 +46,7 @@ export const RESPONSE_MOCK: Record<string, any> = {
             {
               id: "cluster-1-binding-1",
               mode: "ALLOW_LIST",
-              namespaces: [
-                {
-                  id: "ns-0",
-                  name: "my-namespace-0"
-                },
-                {
-                  id: "ns-1",
-                  name: "my-namespace-1"
-                }
-              ],
+              namespaces: ["my-namespace-0","my-namespace-1"],
               policy: {
                 id: "cluster-1-binding-1-policy",
                 content: {
@@ -70,16 +61,7 @@ export const RESPONSE_MOCK: Record<string, any> = {
             {
               id: "cluster-1-binding-2",
               mode: "ALLOW_LIST",
-              namespaces: [
-                {
-                  id: "ns-2",
-                  name: "my-namespace-2"
-                },
-                {
-                  id: "ns-1",
-                  name: "my-namespace-1"
-                }
-              ],
+              namespaces: ["my-namespace-2","my-namespace-1"],
               policy: {
                 id: "cluster-1-binding-2-policy",
                 content: {

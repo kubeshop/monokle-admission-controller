@@ -31,7 +31,7 @@ const tokenPath = path.join('/run/secrets/token', '.token');
   const apiFetcher = new Fetcher(
     new ApiHandler(CLOUD_API_URL),
   );
-  const policyUpdater = new PolicyUpdater(kc);
+  const policyUpdater = new PolicyUpdater(kc, logger);
 
   const namespaceInformer = await getNamespaceInformer(
     kc,

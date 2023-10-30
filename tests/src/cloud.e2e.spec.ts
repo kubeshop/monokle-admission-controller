@@ -1,7 +1,9 @@
 import { join, resolve } from 'path';
 import { afterEach, assert, beforeAll, describe, it } from 'vitest'
 import shell from 'shelljs';
+import { parse } from 'yaml'
 import { startMockServer } from './utils/server';
+import { EXPECTED_CRDS } from './utils/expected-crds';
 
 const VERBOSE = process.env.VERBOSE === 'true';
 const NAMESPACE = process.env.MONOKLE_NAMESPACE || 'monokle-admission-controller';
@@ -48,7 +50,7 @@ describe(`Cloud (dir: ${mainDir})`, () => {
 
     assert.match(requestData.token, /ApiKey SAMPLE_TOKEN/);
     assert.match(requestData.body.query, /query getCluster/);
-  }, 20 * 1000);
+  }, 25 * 1000);
 
   it('sends heartbeat mutation', async () => {
     mockServer = await startMockServer('empty');
@@ -58,7 +60,7 @@ describe(`Cloud (dir: ${mainDir})`, () => {
 
     assert.match(requestData.token, /ApiKey SAMPLE_TOKEN/);
     assert.match(requestData.body.query, /mutation clusterDiscovery/);
-  }, 20 * 1000);
+  }, 25 * 1000);
 
   it('propagates fetched cluster data as CRDs', async () => {
     mockServer = await startMockServer('dataAllow');
@@ -73,11 +75,10 @@ describe(`Cloud (dir: ${mainDir})`, () => {
     const binding1 = await run('kubectl get monoklepolicybinding.monokle.io/cluster-1-binding-1 -o yaml');
     const binding2 = await run('kubectl get monoklepolicybinding.monokle.io/cluster-1-binding-2 -o yaml');
 
-    // @TODO check if CRDs are valid
-    console.log(policy1);
-    console.log(policy2);
-    console.log(binding1);
-    console.log(binding2);
+    assertResource(binding1, 'cluster-1-binding-1');
+    assertResource(binding2, 'cluster-1-binding-2');
+    assertResource(policy1, 'cluster-1-binding-1-policy');
+    assertResource(policy2, 'cluster-1-binding-2-policy');
   }, 45 * 1000);
 
   // @TODO updates policy CRDs with new data
@@ -86,6 +87,21 @@ describe(`Cloud (dir: ${mainDir})`, () => {
   // @TODO deletes binding CRDs
   // @TODO sends namespaces back
 });
+
+const assertResource = (resource: any, expectedResourceName: string) => {
+  const expectedResource = EXPECTED_CRDS[expectedResourceName];
+
+  if (!expectedResource) {
+    assert.fail(`Expected resource ${expectedResourceName} not found in EXPECTED_CRDS`);
+  }
+
+  const actualResource = parse(resource);
+
+  assert.equal(actualResource.apiVersion, expectedResource.apiVersion);
+  assert.equal(actualResource.kind, expectedResource.kind);
+  assert.equal(actualResource.metadata.name, expectedResource.metadata.name);
+  assert.deepEqual(actualResource.spec, expectedResource.spec);
+};
 
 const run = async (command: string, timeoutMs?: number): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -129,7 +145,7 @@ const waitForResult = async (command: string, isExpected: (result: string) => bo
   }
 };
 
-async function waitForRequests(mockServer: Awaited<ReturnType<typeof startMockServer>>, requestCount = 1): Promise<any[]> {
+const waitForRequests = async (mockServer: Awaited<ReturnType<typeof startMockServer>>, requestCount = 1): Promise<any[]> => {
   let requests = 0;
 
   const requestsData: any[] = [];
@@ -147,10 +163,10 @@ async function waitForRequests(mockServer: Awaited<ReturnType<typeof startMockSe
 
 const cleanup = async () => {
   return Promise.allSettled([
-    run(`kubectl delete -f monoklepolicy.monokle.io/cluster-1-binding-1-policy`),
-    run(`kubectl delete -f monoklepolicy.monokle.io/cluster-1-binding-2-policy`),
-    run(`kubectl delete -f monoklepolicybinding.monokle.io/cluster-1-binding-1`),
-    run(`kubectl delete -f monoklepolicybinding.monokle.io/cluster-1-binding-2`),
+    run(`kubectl delete monoklepolicy.monokle.io/cluster-1-binding-1-policy`),
+    run(`kubectl delete monoklepolicy.monokle.io/cluster-1-binding-2-policy`),
+    run(`kubectl delete monoklepolicybinding.monokle.io/cluster-1-binding-1`),
+    run(`kubectl delete monoklepolicybinding.monokle.io/cluster-1-binding-2`),
   ]);
 };
 

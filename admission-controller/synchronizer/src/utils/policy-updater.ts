@@ -1,5 +1,6 @@
 import k8s from '@kubernetes/client-node';
 import _ from "lodash";
+import pino from 'pino';
 import {ClusterQueryResponseBinding, ClusterQueryResponseBindingPolicy} from "./queries";
 
 export class PolicyUpdater {
@@ -9,6 +10,7 @@ export class PolicyUpdater {
 
   constructor(
     protected _k8sConfig: k8s.KubeConfig,
+    protected _logger: ReturnType<typeof pino>,
   ) {
     this._k8sClient = this._k8sConfig.makeApiClient(k8s.CustomObjectsApi)
   }
@@ -23,14 +25,19 @@ export class PolicyUpdater {
     const removedPolicyIds = _.difference(existingPolicyIds, newPolicyIds);
     const removedBindingIds = _.difference(existingBindingIds, newBindingIds);
 
-    for (const removedBindingId of removedBindingIds) {
-      this.deleteBinding(removedBindingId);
-      this._bindingsCache.delete(removedBindingId);
-    }
+    try {
+      for (const removedBindingId of removedBindingIds) {
+        this.deleteBinding(removedBindingId);
+        this._bindingsCache.delete(removedBindingId);
+      }
 
-    for (const removedPolicyId of removedPolicyIds) {
-      this.deletePolicy(removedPolicyId);
-      this._policiesCache.delete(removedPolicyId);
+      for (const removedPolicyId of removedPolicyIds) {
+        this.deletePolicy(removedPolicyId);
+        this._policiesCache.delete(removedPolicyId);
+      }
+    } catch (err: any) {
+      // Failing on deletion shouldn't stop entire update process.
+      this._logger.warn({ msg: 'Failed to delete policy or binding', errMsg: err.message, err });
     }
 
     for (const policy of policies) {
@@ -142,12 +149,14 @@ export class PolicyUpdater {
     return {
       policyName: binding.policy.id,
       validationActions: ['Warn'],
-      namespaceSelector: {
-        matchExpressions: [{
-          key: 'name',
-          operator: binding.mode === 'ALLOW_LIST' ? 'In' : 'NotIn',
-          values: binding.namespaces
-        }]
+      matchResources: {
+        namespaceSelector: {
+          matchExpressions: [{
+            key: 'name',
+            operator: binding.mode === 'ALLOW_LIST' ? 'In' : 'NotIn',
+            values: binding.namespaces
+          }]
+        }
       }
     };
   }
