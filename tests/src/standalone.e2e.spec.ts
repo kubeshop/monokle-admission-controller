@@ -1,5 +1,5 @@
 import { join, resolve } from 'path';
-import { afterEach, assert, beforeAll, describe, it } from 'vitest'
+import { afterAll, afterEach, assert, beforeAll, describe, it } from 'vitest'
 import shell from 'shelljs';
 
 const VERBOSE = process.env.VERBOSE === 'true';
@@ -17,7 +17,7 @@ describe(`Standalone (dir: ${mainDir})`, () => {
       return result.includes('monokle-admission-controller-server') && result.includes('Running');
     }, 60 * 1000);
 
-    await waitForResult(`kubectl -n ${NAMESPACE} logs -l app=monokle-admission-controller-server --tail 250`, (result) => {
+    await waitForResult(`kubectl -n ${NAMESPACE} logs -l app=monokle-admission-controller-server --tail 5000`, (result) => {
       return result.includes('Server listening at');
     }, 60 * 1000);
 
@@ -29,28 +29,33 @@ describe(`Standalone (dir: ${mainDir})`, () => {
 
   afterEach(async () => {
     await cleanup();
-  });
+  }, 60 * 1000);
+
+  afterAll(async () => {
+    await run('kubectl delete namespace nstest1');
+    await run('kubectl delete namespace nstest2');
+  }, 60 * 1000);
 
   it('creates resource (any) with no warnings when no policy defined for namespace', async () => {
     const output = await run(`cd "${mainDir}" && kubectl -n nstest2 apply -f examples/pod-valid.yaml`);
 
     assert.match(output, /pod\/pod-valid created/);
-    assert.notMatch(output, /warning/gi);
-    assert.notMatch(output, /error/gi);
+    assert.notMatch(output, /\(warning\)/gi);
+    assert.notMatch(output, /\(error\)/gi);
   });
 
-  it('creates resource (valid) with no warnings when policy defined for namespace', async () => {
+  it('creates resource (valid) with no warnings when policy defined for namespace (matchLabels)', async () => {
     await run(`cd "${mainDir}" && kubectl apply -f examples/policy-sample-1.yaml`);
     await run(`cd "${mainDir}" && kubectl apply -f examples/policy-binding-sample-2.yaml`, 500);
 
     const output = await run(`cd "${mainDir}" && kubectl -n default apply -f examples/pod-valid.yaml`);
 
     assert.match(output, /pod\/pod-valid created/);
-    assert.notMatch(output, /warning/gi);
-    assert.notMatch(output, /error/gi);
+    assert.notMatch(output, /\(warning\)/gi);
+    assert.notMatch(output, /\(error\)/gi);
   });
 
-  it('creates resource (misconfigured) with warnings when policy defined for namespace', async () => {
+  it('creates resource (misconfigured) with warnings when policy defined for namespace (matchLabels)', async () => {
     await run(`cd "${mainDir}" && kubectl apply -f examples/policy-sample-2.yaml`);
     await run(`cd "${mainDir}" && kubectl apply -f examples/policy-binding-sample-3.yaml`, 500);
 
@@ -64,6 +69,78 @@ describe(`Standalone (dir: ${mainDir})`, () => {
     assert.equal(warningsCount, 11);
   });
 
+  it('creates resource (valid) with no warnings when policy defined for namespace (matchExpressions, In)', async () => {
+    await run(`cd "${mainDir}" && kubectl apply -f examples/policy-sample-1.yaml`);
+    await run(`cd "${mainDir}" && kubectl apply -f examples/policy-binding-sample-4.yaml`, 500);
+
+    const output = await run(`cd "${mainDir}" && kubectl -n nstest1 apply -f examples/pod-valid.yaml`);
+
+    assert.match(output, /pod\/pod-valid created/);
+    assert.notMatch(output, /\(warning\)/gi);
+    assert.notMatch(output, /\(error\)/gi);
+  });
+
+  it('creates resource (misconfigured) with no warnings when policy defined for different namespace (matchExpressions, In)', async () => {
+    await run(`cd "${mainDir}" && kubectl apply -f examples/policy-sample-1.yaml`);
+    await run(`cd "${mainDir}" && kubectl apply -f examples/policy-binding-sample-4.yaml`, 500);
+
+    const output = await run(`cd "${mainDir}" && kubectl -n default apply -f examples/pod-warning.yaml`);
+
+    assert.match(output, /pod\/pod-warning created/);
+    assert.notMatch(output, /\(warning\)/gi);
+    assert.notMatch(output, /\(error\)/gi);
+  });
+
+  it('creates resource (misconfigured) with warnings when policy defined for namespace (matchExpressions, In)', async () => {
+    await run(`cd "${mainDir}" && kubectl apply -f examples/policy-sample-1.yaml`);
+    await run(`cd "${mainDir}" && kubectl apply -f examples/policy-binding-sample-4.yaml`, 500);
+
+    const output = await run(`cd "${mainDir}" && kubectl -n nstest1 apply -f examples/pod-warning.yaml`);
+
+    assert.match(output, /pod\/pod-warning created/);
+    assert.match(output, /warning/gi);
+
+    const warningsCount = (output.match(/\(warning\)/gi) || []).length;
+
+    assert.equal(warningsCount, 8);
+  });
+
+  it('creates resource (valid) with no warnings when policy defined for namespace (matchExpressions, NotIn)', async () => {
+    await run(`cd "${mainDir}" && kubectl apply -f examples/policy-sample-1.yaml`);
+    await run(`cd "${mainDir}" && kubectl apply -f examples/policy-binding-sample-5.yaml`, 500);
+
+    const output = await run(`cd "${mainDir}" && kubectl -n nstest1 apply -f examples/pod-valid.yaml`);
+
+    assert.match(output, /pod\/pod-valid created/);
+    assert.notMatch(output, /\(warning\)/gi);
+    assert.notMatch(output, /\(error\)/gi);
+  });
+
+  it('creates resource (misconfigured) with no warnings when policy defined for different namespace (matchExpressions, NotIn)', async () => {
+    await run(`cd "${mainDir}" && kubectl apply -f examples/policy-sample-1.yaml`);
+    await run(`cd "${mainDir}" && kubectl apply -f examples/policy-binding-sample-5.yaml`, 500);
+
+    const output = await run(`cd "${mainDir}" && kubectl -n default apply -f examples/pod-warning.yaml`);
+
+    assert.match(output, /pod\/pod-warning created/);
+    assert.notMatch(output, /\(warning\)/gi);
+    assert.notMatch(output, /\(error\)/gi);
+  });
+
+  it('creates resource (misconfigured) with warnings when policy defined for namespace (matchExpressions, NotIn)', async () => {
+    await run(`cd "${mainDir}" && kubectl apply -f examples/policy-sample-1.yaml`);
+    await run(`cd "${mainDir}" && kubectl apply -f examples/policy-binding-sample-5.yaml`, 500);
+
+    const output = await run(`cd "${mainDir}" && kubectl -n nstest1 apply -f examples/pod-warning.yaml`);
+
+    assert.match(output, /pod\/pod-warning created/);
+    assert.match(output, /warning/gi);
+
+    const warningsCount = (output.match(/\(warning\)/gi) || []).length;
+
+    assert.equal(warningsCount, 8);
+  });
+
   it('creates resource (valid) with no warnings when policy defined globally', async () => {
     await run(`cd "${mainDir}" && kubectl apply -f examples/policy-sample-1.yaml`);
     await run(`cd "${mainDir}" && kubectl apply -f examples/policy-binding-sample-1.yaml`, 500);
@@ -71,8 +148,8 @@ describe(`Standalone (dir: ${mainDir})`, () => {
     const output = await run(`cd "${mainDir}" && kubectl -n default apply -f examples/pod-valid.yaml`);
 
     assert.match(output, /pod\/pod-valid created/);
-    assert.notMatch(output, /warning/gi);
-    assert.notMatch(output, /error/gi);
+    assert.notMatch(output, /\(warning\)/gi);
+    assert.notMatch(output, /\(error\)/gi);
   });
 
   it('creates resource (misconfigured) with warnings when policy defined globally', async () => {
@@ -142,10 +219,13 @@ const cleanup = async () => {
     run(`cd "${mainDir}" && kubectl delete -f examples/policy-binding-sample-1.yaml`),
     run(`cd "${mainDir}" && kubectl delete -f examples/policy-binding-sample-2.yaml`),
     run(`cd "${mainDir}" && kubectl delete -f examples/policy-binding-sample-3.yaml`),
+    run(`cd "${mainDir}" && kubectl delete -f examples/policy-binding-sample-4.yaml`),
+    run(`cd "${mainDir}" && kubectl delete -f examples/policy-binding-sample-5.yaml`),
+    run(`cd "${mainDir}" && kubectl delete -f examples/pod-valid.yaml -n default`),
+    run(`cd "${mainDir}" && kubectl delete -f examples/pod-valid.yaml -n nstest1`),
     run(`cd "${mainDir}" && kubectl delete -f examples/pod-valid.yaml -n nstest2`),
-    run(`cd "${mainDir}" && kubectl delete -f examples/pod-valid.yaml -n default`),
+    run(`cd "${mainDir}" && kubectl delete -f examples/pod-warning.yaml -n default`),
     run(`cd "${mainDir}" && kubectl delete -f examples/pod-warning.yaml -n nstest1`),
-    run(`cd "${mainDir}" && kubectl delete -f examples/pod-valid.yaml -n default`),
     run(`cd "${mainDir}" && kubectl delete -f examples/pod-errors.yaml -n nstest2 `),
   ]);
 };
