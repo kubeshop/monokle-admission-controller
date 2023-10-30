@@ -116,11 +116,7 @@ export class PolicyUpdater {
         metadata: {
           name: binding.id,
         },
-        spec: {
-          policyName: binding.policy.id,
-          validationActions: ['Warn']
-          // @TODO logic for mapping binding.mode to matchResources
-        }
+        spec: this.createBindingSpec(binding)
       }
     )
   }
@@ -137,13 +133,23 @@ export class PolicyUpdater {
         metadata: {
           name: binding.id,
         },
-        spec: {
-          policyName: binding.policy.id,
-          validationActions: ['Warn']
-          // @TODO logic for mapping binding.mode to matchResources
-        }
+        spec: this.createBindingSpec(binding)
       }
     )
+  }
+
+  protected createBindingSpec(binding: ClusterQueryResponseBinding) {
+    return {
+      policyName: binding.policy.id,
+      validationActions: ['Warn'],
+      namespaceSelector: {
+        matchExpressions: [{
+          key: 'name',
+          operator: binding.mode === 'ALLOW_LIST' ? 'In' : 'NotIn',
+          values: binding.namespaces
+        }]
+      }
+    };
   }
 
   protected isEqualBinding(binding1: ClusterQueryResponseBinding, binding2: ClusterQueryResponseBinding): boolean {
