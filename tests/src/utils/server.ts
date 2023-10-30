@@ -4,12 +4,24 @@ import cors from 'cors';
 import _ from 'lodash';
 import {RESPONSE_MOCK} from './response-mocks.js';
 
-export function startMockServer(responseMock: 'empty' | 'emptySync' | 'dataAllow' | 'dataBlock' = 'dataAllow', host = '0.0.0.0', port = 5000): Promise<Server> {
+type ResponseMockName = 'empty' | 'emptySync' | 'dataAllow' | 'dataBlock';
+
+type MockServer = {
+  server: Server;
+  switchResponseMock: (responseMock: ResponseMockName) => void;
+};
+
+export function startMockServer(
+  responseMock: ResponseMockName = 'dataAllow',
+  host = '0.0.0.0',
+  port = 5000
+): Promise<MockServer> {
   const HOST = process.env.MOCK_HOST ?? host;
   const PORT = process.env.MOCK_PORT ? parseInt(process.env.MOCK_PORT, 10) : port;
   const apiMock: Application = express();
 
   let serverInstance: Server<typeof IncomingMessage, typeof ServerResponse>;
+  let responseDataMock = RESPONSE_MOCK[responseMock];
 
   apiMock.use(cors())
   apiMock.use(express.json());
@@ -21,19 +33,18 @@ export function startMockServer(responseMock: 'empty' | 'emptySync' | 'dataAllow
   apiMock.post('/graphql', async (req: Request, res: Response) => {
     const token = req.get('Authorization');
     const body = req.body;
-    const responseData = RESPONSE_MOCK[responseMock];
 
-    console.log('API-MOCK:Request', token, body, JSON.stringify(responseData));
+    console.log('API-MOCK:Request', token, body, JSON.stringify(responseDataMock));
 
     if (serverInstance) {
       serverInstance.emit('requestReceived', {
         token,
         body,
-        response: responseData
+        response: responseDataMock
       });
     }
 
-    res.send(responseData);
+    res.send(responseDataMock);
   });
 
   return new Promise((resolve) => {
@@ -46,7 +57,12 @@ export function startMockServer(responseMock: 'empty' | 'emptySync' | 'dataAllow
         console.log('API-MOCK: Test server closed.');
       });
 
-      resolve(server);
+      resolve({
+        server,
+        switchResponseMock: (responseMock: ResponseMockName) => {
+          responseDataMock = RESPONSE_MOCK[responseMock];
+        }
+      });
     });
   });
 }

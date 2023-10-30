@@ -13,7 +13,7 @@ const mainDir = resolve(join(currentDir, '..', '..'));
 // and Monokle Admission Controller deployed there as described in the README.md file.
 
 describe(`Cloud (dir: ${mainDir})`, () => {
-  let server: Awaited<ReturnType<typeof startMockServer>>;
+  let mockServer: Awaited<ReturnType<typeof startMockServer>>;
 
   beforeAll(async () => {
     await waitForResult(`kubectl -n ${NAMESPACE} get pod`, (result) => {
@@ -32,18 +32,18 @@ describe(`Cloud (dir: ${mainDir})`, () => {
   }, 180 * 1000);
 
   afterEach(async () => {
-    if (server) {
-      server.closeAllConnections();
-      await (new Promise((resolve) => server.close(resolve)));
+    if (mockServer) {
+      mockServer.server.closeAllConnections();
+      await (new Promise((resolve) => mockServer.server.close(resolve)));
     }
 
     await cleanup();
   });
 
   it('sends getCluster API query', async () => {
-    server = await startMockServer('empty');
+    mockServer = await startMockServer('empty');
 
-    const requestsData = await waitForRequests(server, 2);
+    const requestsData = await waitForRequests(mockServer, 2);
     const requestData = requestsData.find(requestData => requestData.body.query.includes('getCluster'));
 
     assert.match(requestData.token, /ApiKey SAMPLE_TOKEN/);
@@ -51,9 +51,9 @@ describe(`Cloud (dir: ${mainDir})`, () => {
   }, 20 * 1000);
 
   it('sends heartbeat mutation', async () => {
-    server = await startMockServer('empty');
+    mockServer = await startMockServer('empty');
 
-    const requestsData = await waitForRequests(server, 2);
+    const requestsData = await waitForRequests(mockServer, 2);
     const requestData = requestsData.find(requestData => requestData.body.query.includes('clusterDiscovery'));
 
     assert.match(requestData.token, /ApiKey SAMPLE_TOKEN/);
@@ -61,10 +61,10 @@ describe(`Cloud (dir: ${mainDir})`, () => {
   }, 20 * 1000);
 
   it('propagates fetched cluster data as CRDs', async () => {
-    server = await startMockServer('dataAllow');
+    mockServer = await startMockServer('dataAllow');
 
     // Wait for getCluster query to run.
-    await waitForRequests(server, 2);
+    await waitForRequests(mockServer, 2);
     // Wait for CRDs propagation.
     await sleep(500);
 
@@ -80,6 +80,10 @@ describe(`Cloud (dir: ${mainDir})`, () => {
     console.log(binding2);
   }, 45 * 1000);
 
+  // @TODO updates policy CRDs with new data
+  // @TODO deletes policy CRDs
+  // @TODO updates binding CRDs with new data
+  // @TODO deletes binding CRDs
   // @TODO sends namespaces back
 });
 
@@ -125,12 +129,12 @@ const waitForResult = async (command: string, isExpected: (result: string) => bo
   }
 };
 
-async function waitForRequests(server: Awaited<ReturnType<typeof startMockServer>>, requestCount = 1): Promise<any[]> {
+async function waitForRequests(mockServer: Awaited<ReturnType<typeof startMockServer>>, requestCount = 1): Promise<any[]> {
   let requests = 0;
 
   const requestsData: any[] = [];
   return new Promise(res => {
-    server.on('requestReceived', requestData => {
+    mockServer.server.on('requestReceived', requestData => {
       requests++;
       requestsData.push(requestData);
 
@@ -142,7 +146,6 @@ async function waitForRequests(server: Awaited<ReturnType<typeof startMockServer
 };
 
 const cleanup = async () => {
-  // @TODO not very efficient, should be improved
   return Promise.allSettled([
     run(`kubectl delete -f monoklepolicy.monokle.io/cluster-1-binding-1-policy`),
     run(`kubectl delete -f monoklepolicy.monokle.io/cluster-1-binding-2-policy`),
