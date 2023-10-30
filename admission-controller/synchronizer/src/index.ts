@@ -1,16 +1,18 @@
 import pino from 'pino';
 import path from 'path';
+import _ from "lodash";
 import k8s from '@kubernetes/client-node';
 import {Fetcher, ApiHandler} from '@monokle/synchronizer';
 import {getNamespaceInformer} from './utils/get-informer.js';
 import {NamespaceListener} from './utils/namespace-listener.js';
 import {readToken} from './utils/read-token.js';
-import {getClusterQuery, ClusterQueryResponse, clusterDiscoveryMutation} from './utils/queries.js';
+import {getClusterQuery, ClusterQueryResponse, clusterDiscoveryMutation, ClusterDiscoveryMutationResponse} from './utils/queries.js';
 import {PolicyUpdater} from './utils/policy-updater.js';
 
 const LOG_LEVEL = (process.env.MONOKLE_LOG_LEVEL || 'warn').toLowerCase();
 const NAMESPACE = (process.env.MONOKLE_NAMESPACE || 'monokle-admission-controller');
 const IGNORED_NAMESPACES = (process.env.MONOKLE_IGNORE_NAMESPACES || '').split(',').filter(Boolean);
+const CURRENT_VERSION = process.env.MONOKLE_CURRENT_VERSION ?? '0.0.0';
 const CLOUD_API_URL = process.env.MONOKLE_CLOUD_API_URL ?? '';
 
 const COMMUNICATION_INTERVAL_SEC = 15;
@@ -42,6 +44,7 @@ const tokenPath = path.join('/run/secrets/token', '.token');
 
   let hasPendingQuery = false;
   let shouldSyncNamespaces = false;
+  let propagatedNamespaces: string[] = [];
   setInterval(async () => {
     if (hasPendingQuery) {
       return;
@@ -74,6 +77,7 @@ const tokenPath = path.join('/run/secrets/token', '.token');
       await policyUpdater.update(clusterData.data.getCluster.cluster.bindings);
 
       shouldSyncNamespaces = clusterData.data.getCluster.cluster.namespaceSync;
+      propagatedNamespaces = clusterData.data.getCluster.cluster.namespaces.map((namespace) => namespace.name);
 
       if (shouldSyncNamespaces && !namespaceListener.isRunning) {
         await namespaceListener.start();
@@ -85,14 +89,27 @@ const tokenPath = path.join('/run/secrets/token', '.token');
     }
 
     try {
+      const requestData: { version: string, namespaces?: string[] } = {
+        version: CURRENT_VERSION,
+        namespaces: undefined
+      };
+
       if (shouldSyncNamespaces) {
         const namespaces = namespaceListener.namespaces;
+        const filteredNamespaces = namespaces.filter((namespace) => !IGNORED_NAMESPACES.includes(namespace));
+        const hasDifferentNamespaces = _.difference(filteredNamespaces, propagatedNamespaces).length > 0;
 
-        logger.debug({msg: 'Sending namespaces', namespaces});
+        if (hasDifferentNamespaces) {
+          requestData.namespaces = filteredNamespaces;
+        }
+      }
 
-        // @TODO send namespaces to cloud
-      } else {
-        const heartbeatResponse = await apiFetcher.query<any>(clusterDiscoveryMutation, {version: '0.1.0'});
+      logger.debug({msg: 'Sending heartbeat', requestData});
+
+      const discoveryResponse = await apiFetcher.query<ClusterDiscoveryMutationResponse>(clusterDiscoveryMutation, requestData);
+
+      if (!discoveryResponse.success) {
+        throw new Error(discoveryResponse.error);
       }
     } catch (err: any) {
       logger.error({msg: 'Error: Namespace update', err: err.message, body: err.body});

@@ -1,5 +1,42 @@
 import {ValidationConfig} from "@monokle/types";
 
+export type ClusterQueryResponseBindingPolicy = {
+  id: string
+  content: ValidationConfig
+  projectId: string
+};
+
+export type ClusterQueryResponseBinding = {
+  id: string
+  mode: 'ALLOW_LIST' | 'BLOCK_LIST'
+  namespaces: string[]
+  policy: ClusterQueryResponseBindingPolicy
+};
+
+export type ClusterQueryResponse = {
+  getCluster: {
+    cluster: {
+      id: string
+      name: string
+      namespaceSync: boolean
+
+      namespaces: {
+        id: string
+        name: string
+      }[]
+
+      bindings: ClusterQueryResponseBinding[]
+    }
+  }
+};
+
+export type ClusterDiscoveryMutationResponse = {
+  clusterDiscovery: {
+    version: string
+    namespaces?: string[]
+  }
+};
+
 export const getClusterQuery = `
   query getCluster {
     getCluster {
@@ -31,36 +68,6 @@ export const getClusterQuery = `
   }
 `;
 
-export type ClusterQueryResponseBindingPolicy = {
-  id: string
-  content: ValidationConfig
-  projectId: string
-};
-
-export type ClusterQueryResponseBinding = {
-  id: string
-  mode: 'ALLOW_LIST' | 'BLOCK_LIST'
-  namespaces: string[]
-  policy: ClusterQueryResponseBindingPolicy
-};
-
-export type ClusterQueryResponse = {
-  getCluster: {
-    cluster: {
-      id: string
-      name: string
-      namespaceSync: boolean
-
-      namespaces: {
-        id: string
-        name: string
-      }[]
-
-      bindings: ClusterQueryResponseBinding[]
-    }
-  }
-};
-
 export const clusterDiscoveryMutation = `
   mutation clusterDiscovery($version: String!, $namespaces: String[]) {
     clusterDiscovery(
@@ -69,6 +76,7 @@ export const clusterDiscoveryMutation = `
         namespaces: $namespaces
       }
     ) {
+      version
       namespaces
     }
   }

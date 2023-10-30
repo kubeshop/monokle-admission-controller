@@ -39,6 +39,8 @@ spec:
             value: kube-node-lease,kube-public,kube-system,{{ include "monokle-admission-controller.namespace" . }},{{ .Values.ignoreNamespaces | join "," }}
           - name: MONOKLE_CLOUD_API_URL
             value: {{ .Values.cloudApiUrl }}
+          - name: MONOKLE_CURRENT_VERSION
+            value: {{ .Chart.AppVersion }}
       volumes:
       - name: automation-token-secret
         secret:
