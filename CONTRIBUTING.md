@@ -22,6 +22,12 @@ minikube start --extra-config=apiserver.enable-admission-plugins=ValidatingAdmis
 ./scripts/dev-standalone.sh
 ```
 
+or for Cloud enabled version:
+
+```bash
+/scripts/dev-cloud.sh cloudApiUrl
+```
+
 This will run a watcher and reload any time `./admission-controller/*` folder changes.
 
 ### Deploying (via Helm + Minikube registry)
@@ -41,6 +47,9 @@ minikube image build -t admission-webhook-init -f ./Dockerfile .
 cd admission-controller/server
 minikube image build -t admission-webhook -f ./Dockerfile .
 
+cd admission-controller/synchronizer
+minikube image build -t admission-webhook -f ./Dockerfile .
+
 docker images
 ```
 
@@ -49,7 +58,9 @@ helm install monokle-ac ./helm \
 --set image.init.pullPolicy=Never \
 --set image.init.overridePath=admission-webhook-init \
 --set image.server.pullPolicy=Never \
---set image.server.overridePath=admission-webhook
+--set image.server.overridePath=admission-webhook \
+--set image.init.pullPolicy=Never \
+--set image.init.overridePath=admission-webhook-synchronizer
 ```
 
 To uninstall:
