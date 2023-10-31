@@ -170,7 +170,7 @@ jobs:
         working-directory: ./admission-controller/server
 
       - name: Build local images (synchronizer container)
-        run: eval $(minikube -p minikube docker-env) && minikube image build -t admission-webhook-synchronizer -f ./Dockerfile .
+        run: eval $(minikube -p minikube docker-env) && minikube image build -t admission-synchronizer -f ./Dockerfile .
         working-directory: ./admission-controller/synchronizer
 
       - name: Helm install
@@ -183,8 +183,8 @@ jobs:
             --set image.init.overridePath=admission-webhook-init \
             --set image.server.pullPolicy=Never \
             --set image.server.overridePath=admission-webhook \
-            --set image.server.pullPolicy=Never \
-            --set image.server.overridePath=admission-webhook-synchronizer \
+            --set image.synchronizer.pullPolicy=Never \
+            --set image.synchronizer.overridePath=admission-synchronizer \
             --set logLevel=debug \
             --set cloudApiUrl="host.minikube.internal:5000" \
             --set automationToken=SAMPLE_TOKEN
