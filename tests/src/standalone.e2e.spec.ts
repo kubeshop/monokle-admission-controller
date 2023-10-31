@@ -168,6 +168,36 @@ describe(`Standalone (dir: ${mainDir})`, () => {
     assert.equal(warningsCount, 8);
     assert.equal(errorsCount, 4);
   });
+
+  it('creates resource (valid) when "Deny" policy defined', async () => {
+    await run(`cd "${mainDir}" && kubectl apply -f examples/policy-sample-1.yaml`);
+    await run(`cd "${mainDir}" && kubectl apply -f examples/policy-binding-sample-6.yaml`, 500);
+
+    const output = await run(`cd "${mainDir}" && kubectl -n default apply -f examples/pod-valid.yaml`);
+
+    assert.match(output, /pod\/pod-valid created/);
+    assert.notMatch(output, /\(warning\)/gi);
+    assert.notMatch(output, /\(error\)/gi);
+  });
+
+  it('blocks creating resource (misconfigured) with list of violations as output when "Deny" policy defined', async () => {
+    await run(`cd "${mainDir}" && kubectl apply -f examples/policy-sample-1.yaml`);
+    await run(`cd "${mainDir}" && kubectl apply -f examples/policy-binding-sample-6.yaml`, 500);
+
+    try {
+      const output = await run(`cd "${mainDir}" && kubectl -n default apply -f examples/pod-warning.yaml`);
+      assert.fail(`Expected error but got success: ${output}`);
+    } catch (err: any) {
+      assert.notMatch(err, /pod\/pod-warning created/);
+      assert.match(err, /\(warning\)/gi);
+
+      const warningsCount = (err.match(/\(warning\)/gi) || []).length;
+      const errorsCount = (err.match(/\(error\)/gi) || []).length;
+
+      assert.equal(warningsCount, 8);
+      assert.equal(errorsCount, 3);
+    }
+  });
 });
 
 const run = async (command: string, timeoutMs?: number): Promise<string> => {
@@ -221,6 +251,7 @@ const cleanup = async () => {
     run(`cd "${mainDir}" && kubectl delete -f examples/policy-binding-sample-3.yaml`),
     run(`cd "${mainDir}" && kubectl delete -f examples/policy-binding-sample-4.yaml`),
     run(`cd "${mainDir}" && kubectl delete -f examples/policy-binding-sample-5.yaml`),
+    run(`cd "${mainDir}" && kubectl delete -f examples/policy-binding-sample-6.yaml`),
     run(`cd "${mainDir}" && kubectl delete -f examples/pod-valid.yaml -n default`),
     run(`cd "${mainDir}" && kubectl delete -f examples/pod-valid.yaml -n nstest1`),
     run(`cd "${mainDir}" && kubectl delete -f examples/pod-valid.yaml -n nstest2`),

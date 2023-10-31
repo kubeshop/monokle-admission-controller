@@ -174,6 +174,13 @@ export class ValidationServer {
         }
       }
 
+      this._logger.trace({resourceForValidation, validationResponses});
+
+      if (violations.length === 0) {
+        this._logger.debug({msg: 'No violations', response});
+        return response;
+      }
+
       const violationsByAction = violations.reduce((acc: Record<string, Violation[]>, violation: Violation) => {
         const actions = violation.actions;
 
@@ -191,7 +198,6 @@ export class ValidationServer {
       const responseFull = this._handleViolationsByAction(violationsByAction, resourceForValidation, response);
 
       this._logger.debug({response});
-      this._logger.trace({resourceForValidation, validationResponses});
 
       return responseFull;
     });
@@ -221,6 +227,11 @@ export class ValidationServer {
       // - https://kubernetes.io/blog/2020/09/03/warnings/
       if (action.toLowerCase() === 'warn') {
         response = this._handleViolationsAsWarn(violationsByAction[action], resource, response);
+      } else if (action.toLowerCase() === 'deny') {
+        const violationMessages = this._getViolationsMessages(violationsByAction[action], resource);
+
+        response.response.allowed = false;
+        response.response.status.message = violationMessages.join("\n");
       }
     }
 
@@ -228,6 +239,15 @@ export class ValidationServer {
   }
 
   private _handleViolationsAsWarn(violations: Violation[], resource: Resource, response: AdmissionResponse) {
+    const violationMessages = this._getViolationsMessages(violations, resource);
+    if (violationMessages.length > 0) {
+      response.response.warnings = violationMessages;
+    }
+
+    return response;
+  }
+
+  private _getViolationsMessages(violations: Violation[], resource: Resource): string[] {
     const errors = violations
       .filter((v) => v.level === 'error')
       .map((e) => this._formatViolationMessage(e, resource));
@@ -236,9 +256,8 @@ export class ValidationServer {
       .filter((v) => v.level === 'warning')
       .map((e) => this._formatViolationMessage(e, resource));
 
-
     if (errors.length > 0 || warnings.length > 0) {
-      response.response.warnings = [
+      return [
         `Monokle Admission Controller found ${errors.length} errors and ${warnings.length} warnings:`,
         ...errors,
         ...warnings,
@@ -246,7 +265,7 @@ export class ValidationServer {
       ];
     }
 
-    return response;
+    return [];
   }
 
   private _getFullyQualifiedName(result: ValidationResult) {
