@@ -23,13 +23,21 @@ echo "Bumping from $current_version to $VERSION"
 echo "Updating README file..."
 
 replace-in-file \
+"https://github.com/kubeshop/monokle-admission-controller/releases/download/v$current_version/helm.tgz --set automationToken" \
+"https://github.com/kubeshop/monokle-admission-controller/releases/download/v$VERSION/helm.tgz --set automationToken" \
+"$rootdir/README.md"
+replace-in-file \
 "https://github.com/kubeshop/monokle-admission-controller/releases/download/v$current_version/helm.tgz" \
 "https://github.com/kubeshop/monokle-admission-controller/releases/download/v$VERSION/helm.tgz" \
 "$rootdir/README.md"
 
 replace-in-file \
-"https://github.com/kubeshop/monokle-admission-controller/releases/download/v$current_version/install.yaml" \
-"https://github.com/kubeshop/monokle-admission-controller/releases/download/v$VERSION/install.yaml" \
+"https://github.com/kubeshop/monokle-admission-controller/releases/download/v$current_version/install-cloud.yaml" \
+"https://github.com/kubeshop/monokle-admission-controller/releases/download/v$VERSION/install-cloud.yaml" \
+"$rootdir/README.md"
+replace-in-file \
+"https://github.com/kubeshop/monokle-admission-controller/releases/download/v$current_version/install-standalone.yaml" \
+"https://github.com/kubeshop/monokle-admission-controller/releases/download/v$VERSION/install-standalone.yaml" \
 "$rootdir/README.md"
 
 echo "Updating Helm Chart version..."

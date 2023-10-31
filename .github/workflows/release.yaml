@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        from: [init, server]
+        from: [init, server, synchronizer]
 
     steps:
       - name: Extract version from tag
@@ -110,7 +110,8 @@ jobs:
           VERSION: ${{ env.VERSION }}
         run: |
           helm package ./helm --version ${VERSION}
-          helm template ./helm --version ${VERSION} > install.yaml
+          helm template ./helm --version ${VERSION} > install-standalone.yaml
+          helm template ./helm --version ${VERSION} --set automationToken=SAMPLE_TOKEN > install-cloud.yaml
           mv monokle-admission-controller-${VERSION}.tgz helm.tgz
 
       - name: Create release and upload artifacts
@@ -118,6 +119,6 @@ jobs:
         with:
           name: "Release ${{ env.VERSION }}"
           allowUpdates: true
-          artifacts: 'install.yaml,helm.tgz'
+          artifacts: 'helm.tgz,install-cloud.yaml,install-standalone.yaml'
           omitBody: true
           token: ${{ secrets.CI_BOT_TOKEN }}
