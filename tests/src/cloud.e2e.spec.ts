@@ -26,7 +26,7 @@ describe(`Cloud (dir: ${mainDir})`, () => {
       return result.includes('monokle-admission-controller-synchronizer') && result.includes('Running');
     }, 60 * 1000);
 
-    await waitForResult(`kubectl -n ${NAMESPACE} logs -l app=monokle-admission-controller-server --tail 250`, (result) => {
+    await waitForResult(`kubectl -n ${NAMESPACE} logs -l app=monokle-admission-controller-server --tail 5000`, (result) => {
       return result.includes('Server listening at');
     }, 60 * 1000);
 
