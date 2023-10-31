@@ -70,8 +70,8 @@ jobs:
         working-directory: ./tests/
         run: npm test "${{ matrix.type }}"
 
-  test-helm:
-    name: Helm
+  test-helm-standalone:
+    name: Helm (Standalone)
     runs-on: ubuntu-latest
     needs: [test-unit, test-skaffold]
     strategy:
@@ -130,3 +130,72 @@ jobs:
       - name: Test
         working-directory: ./tests/
         run: MONOKLE_NAMESPACE=mac-test npm run test standalone
+
+  test-helm-cloud:
+    name: Helm (Cloud)
+    runs-on: ubuntu-latest
+    needs: [test-unit, test-skaffold]
+    strategy:
+      fail-fast: true
+      matrix:
+        k8s: [v1.24.17, v1.28.3]
+        helm: [v3.13.1]
+
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 18
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: ${{ matrix.helm }}
+
+      - name: Debug helm
+        run: helm version
+
+      - name: Checkout Repo
+        uses: actions/checkout@v2
+
+      - name: Start Minikube
+        run: minikube start --kubernetes-version=${{ matrix.k8s }} --extra-config=apiserver.enable-admission-plugins=ValidatingAdmissionWebhook
+
+      - name: Build local images (init container)
+        run: eval $(minikube -p minikube docker-env) && minikube image build -t admission-webhook-init -f ./Dockerfile .
+        working-directory: ./admission-controller/init
+
+      - name: Build local images (server container)
+        run: eval $(minikube -p minikube docker-env) && minikube image build -t admission-webhook -f ./Dockerfile .
+        working-directory: ./admission-controller/server
+
+      - name: Build local images (synchronizer container)
+        run: eval $(minikube -p minikube docker-env) && minikube image build -t admission-webhook-synchronizer -f ./Dockerfile .
+        working-directory: ./admission-controller/synchronizer
+
+      - name: Helm install
+        run: |
+          eval $(minikube -p minikube docker-env)
+          helm package ./helm --version 0.0.0
+          helm install monokle-ac monokle-admission-controller-0.0.0.tgz \
+            --set namespace=mac-test \
+            --set image.init.pullPolicy=Never \
+            --set image.init.overridePath=admission-webhook-init \
+            --set image.server.pullPolicy=Never \
+            --set image.server.overridePath=admission-webhook \
+            --set image.server.pullPolicy=Never \
+            --set image.server.overridePath=admission-webhook-synchronizer \
+            --set logLevel=debug \
+            --set cloudApiUrl="host.minikube.internal:5000" \
+            --set automationToken=SAMPLE_TOKEN
+
+      - name: Preview namespace state
+        run: kubectl -n mac-test get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets
+
+      - name: Install Dependencies
+        working-directory: ./tests/
+        run: npm ci
+
+      - name: Test
+        working-directory: ./tests/
+        run: MONOKLE_NAMESPACE=mac-test npm run test cloud
