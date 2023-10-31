@@ -8,7 +8,7 @@
     "test": "vitest run",
     "test:unit": "vitest run unit",
     "test:e2e": "vitest run e2e",
-    "serve": "ts-node --esm src/utils/server.ts"
+    "serve": "ts-node --esm src/utils/run-server.ts"
   },
   "author": "Kubeshop",
   "license": "MIT",

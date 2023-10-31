@@ -48,7 +48,7 @@ cd admission-controller/server
 minikube image build -t admission-webhook -f ./Dockerfile .
 
 cd admission-controller/synchronizer
-minikube image build -t admission-webhook -f ./Dockerfile .
+minikube image build -t admission-synchronizer -f ./Dockerfile .
 
 docker images
 ```
@@ -59,8 +59,8 @@ helm install monokle-ac ./helm \
 --set image.init.overridePath=admission-webhook-init \
 --set image.server.pullPolicy=Never \
 --set image.server.overridePath=admission-webhook \
---set image.init.pullPolicy=Never \
---set image.init.overridePath=admission-webhook-synchronizer
+--set image.synchronizer.pullPolicy=Never \
+--set image.synchronizer.overridePath=admission-synchronizer
 ```
 
 To uninstall:

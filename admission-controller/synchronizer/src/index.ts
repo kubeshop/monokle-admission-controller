@@ -10,7 +10,6 @@ import {getClusterQuery, ClusterQueryResponse, clusterDiscoveryMutation, Cluster
 import {PolicyUpdater} from './utils/policy-updater.js';
 
 const LOG_LEVEL = (process.env.MONOKLE_LOG_LEVEL || 'warn').toLowerCase();
-const NAMESPACE = (process.env.MONOKLE_NAMESPACE || 'monokle-admission-controller');
 const IGNORED_NAMESPACES = (process.env.MONOKLE_IGNORE_NAMESPACES || '').split(',').filter(Boolean);
 const CURRENT_VERSION = process.env.MONOKLE_CURRENT_VERSION ?? '0.0.0';
 const CLOUD_API_URL = process.env.MONOKLE_CLOUD_API_URL ?? '';

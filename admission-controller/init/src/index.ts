@@ -4,9 +4,7 @@ import logger, { formatLog } from './utils/logger.js';
 import { generateCertificates, isCertExpiring, isCertValid } from './utils/certificates.js';
 import { getSecretCertificate, applySecretCertificate, getWebhookConfiguration, patchWebhookCertificate } from './utils/kubernetes.js';
 
-const LOG_LEVEL = (process.env.MONOKLE_LOG_LEVEL || 'warn').toLowerCase();
 const NAMESPACE = (process.env.MONOKLE_NAMESPACE || 'monokle-admission-controller');
-const IGNORED_NAMESPACES = (process.env.MONOKLE_IGNORE_NAMESPACES || '').split(',').filter(Boolean);
 
 const SECRET_NAME = 'monokle-admission-controller-tls';
 const WEBHOOK_NAME = 'monokle-admission-controller-webhook';
