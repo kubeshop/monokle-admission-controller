@@ -405,7 +405,7 @@ metadata:
   name: my-policy-binding
 spec:
   policyName: my-policy
-  validationActions: [Warn]
+  validationActions: [Deny]
   matchResources:
     namespaceSelector:
       matchLabels:
@@ -439,7 +439,7 @@ metadata:
   name: my-policy-binding
 spec:
   policyName: my-policy
-  validationActions: [Warn]
+  validationActions: [Deny]
   matchResources:
     namespaceSelector:
       matchExpressions:
@@ -450,7 +450,7 @@ spec:
 
 The `policyName` field refers to `MonoklePolicy` resource name, while `matchResources` is optional and can be used to narrow binding scope to specific namespace. If follows the same convention as in other Kubernetes kinds, supporting `namespaceSelector` with `matchLabels` and `matchExpressions`.
 
-The `validationActions` support only `Warn` at this stage, which means "send a warning for every policy violation detected". In the upcoming versions it will be expanded to more actions like - `Ignore`, `Report` and `Deny` (see [#10](https://github.com/kubeshop/monokle-admission-controller/issues/10)).
+The `validationActions` supports `Warn` and `Deny` actions at this stage. `Warn` means "send a warning for every policy violation detected" and `Deny` will block resource creation/update when there are any violations. In the upcoming versions it will be expanded to more actions like - `Ignore` and `Report` (see [#10](https://github.com/kubeshop/monokle-admission-controller/issues/10)).
 
 ## Customizing Helm deployment
 

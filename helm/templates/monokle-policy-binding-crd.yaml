@@ -26,7 +26,7 @@ spec:
                   type: array
                   items:
                     type: string
-                    enum: [Warn]
+                    enum: [Warn, Deny]
                 matchResources:
                   type: object
                   properties:
