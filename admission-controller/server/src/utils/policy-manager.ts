@@ -1,6 +1,6 @@
 import {EventEmitter} from 'events';
 import pino from 'pino';
-import {KubernetesObject} from '@kubernetes/client-node';
+import {KubernetesObject, V1Namespace} from '@kubernetes/client-node';
 import {Config} from '@monokle/validation';
 import {InformerWrapper} from './get-informer.js';
 import {AdmissionRequestObject} from './validation-server.js';
@@ -15,7 +15,12 @@ export type MonoklePolicyBindingConfiguration = {
   validationActions: ['Warn']
   matchResources?: {
     namespaceSelector?: {
-      matchLabels?: Record<string, string>
+      matchLabels?: Record<string, string>,
+      matchExpressions?: {
+        key: string,
+        operator: 'In' | 'NotIn',
+        values: string[]
+      }[]
     }
   }
 }
@@ -54,7 +59,7 @@ export class PolicyManager extends EventEmitter{
     await this._bindingInformer.start();
   }
 
-  getMatchingPolicies(resource: AdmissionRequestObject, namespace: string): MonokleApplicablePolicy[] {
+  getMatchingPolicies(resource: AdmissionRequestObject, resourceNamespace?: V1Namespace): MonokleApplicablePolicy[] {
     this._logger.debug({policies: this._policies.size, bindings: this._bindings.size});
 
     if (this._bindings.size === 0) {
@@ -70,7 +75,7 @@ export class PolicyManager extends EventEmitter{
           return null;
         }
 
-        if (binding.spec.matchResources && !this.isResourceMatching(binding, resource)) {
+        if (binding.spec.matchResources && !this.isResourceMatching(binding, resource, resourceNamespace)) {
           return null;
         }
 
@@ -118,27 +123,81 @@ export class PolicyManager extends EventEmitter{
     this.emit('bindingRemoved', rawBinding);
   }
 
-  private isResourceMatching(binding: MonoklePolicyBinding, resource: AdmissionRequestObject): boolean {
+  // Based on K8s docs here - https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#matchresources-v1beta1-admissionregistration-k8s-io:
+  private isResourceMatching(binding: MonoklePolicyBinding, resource: AdmissionRequestObject, resourceNamespace?: V1Namespace): boolean {
     const namespaceMatchLabels = binding.spec.matchResources?.namespaceSelector?.matchLabels;
+    const namespaceMatchExpressions = binding.spec.matchResources?.namespaceSelector?.matchExpressions ?? [];
+    const kind = resource.kind.toLowerCase();
+    const isClusterWide = ((resource as any).namespace || resource.metadata.namespace) === undefined;
 
     this._logger.trace({
       msg: 'Checking if resource matches binding',
       namespaceMatchLabels,
+      namespaceMatchExpressions,
+      kind,
       resourceMetadata: resource.metadata.labels
     });
 
-    if (!namespaceMatchLabels) {
+    // If non of the matchers are specified, then the resource matches, both cluster wide and namespaced ones.
+    // So this is global policy. As in docs:
+    // > Default to the empty LabelSelector, which matches everything.
+    if (!namespaceMatchLabels && !namespaceMatchExpressions?.length) {
       return true;
     }
 
-    for (const key of Object.keys(namespaceMatchLabels)) {
-      if (resource.metadata.labels?.[key] !== namespaceMatchLabels[key]) {
-        if (!(key === 'namespace' && resource.metadata.namespace === namespaceMatchLabels[key])) {
-          return false;
+    // Skip cluster-wide resources if namespaceSelector defined.
+    // This is different from the K8s docs which says:
+    // > If the object itself is a namespace (...) If the object is another cluster scoped resource, it never skips the policy.
+    if (isClusterWide && kind !== 'namespace') {
+      return false;
+    }
+
+    // If resource is Namespace use it, if not get resource owning namespace.
+    // > If the object itself is a namespace, the matching is performed on object.metadata.labels
+    const namespaceObject = kind !== 'namespace' ? resourceNamespace : resource;
+    if (!namespaceObject) {
+      return false;
+    }
+
+    const namespaceObjectLabels = namespaceObject?.metadata?.labels || {};
+
+    // Convert matchLabels to matchExpressions to have single matching logic. As in docs:
+    // > matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+    // > map is equivalent to an element of matchExpressions, whose key field is "key", the operator
+    // > is "In", and the values array contains only "value". The requirements are ANDed.
+    if (namespaceMatchLabels) {
+      Object.entries(namespaceMatchLabels).forEach(entry => {
+        namespaceMatchExpressions.push({
+          key: entry[0],
+          operator: 'In',
+          values: [entry[1]]
+        });
+      });
+    }
+
+    let isMatching = true;
+    if (namespaceMatchExpressions.length) {
+      for (const expression of namespaceMatchExpressions) {
+        let labelValue = namespaceObjectLabels[expression.key];
+
+        // Try default K8s labels for specific keys if there is no value.
+        if (!labelValue && expression.key === 'name') {
+          labelValue = namespaceObjectLabels[`kubernetes.io/metadata.${expression.key}`]
+        }
+
+        if (expression.operator === 'In' && !expression.values.includes(labelValue)) {
+          isMatching = false;
+          break;
+        }
+
+        // If label is not there it fits into 'NotIn' scenario.
+        if (expression.operator === 'NotIn' && expression.values.includes(labelValue) ) {
+          isMatching = false;
+          break;
         }
       }
     }
 
-    return true;
+    return isMatching;
   }
 }

@@ -1,0 +1,14 @@
+apiVersion: monokle.io/v1alpha1
+kind: MonoklePolicyBinding
+metadata:
+  name: policy-binding-sample-5
+spec:
+  policyName: "policy-sample-1"
+  validationActions: [Warn]
+  matchResources:
+    namespaceSelector:
+      matchExpressions:
+        - key: name
+          operator: NotIn
+          values:
+            - default

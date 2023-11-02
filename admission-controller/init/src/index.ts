@@ -5,6 +5,7 @@ import { generateCertificates, isCertExpiring, isCertValid } from './utils/certi
 import { getSecretCertificate, applySecretCertificate, getWebhookConfiguration, patchWebhookCertificate } from './utils/kubernetes.js';
 
 const NAMESPACE = (process.env.MONOKLE_NAMESPACE || 'monokle-admission-controller');
+
 const SECRET_NAME = 'monokle-admission-controller-tls';
 const WEBHOOK_NAME = 'monokle-admission-controller-webhook';
 

@@ -28,6 +28,12 @@ spec:
         env:
           - name: MONOKLE_NAMESPACE
             value: {{ include "monokle-admission-controller.namespace" . }}
+          - name: MONOKLE_LOG_LEVEL
+            value: {{ .Values.logLevel }}
+          - name: MONOKLE_IGNORE_NAMESPACES
+            value: kube-node-lease,kube-public,kube-system,{{ include "monokle-admission-controller.namespace" . }},{{ .Values.ignoreNamespaces | join "," }}
+          - name: MONOKLE_CURRENT_VERSION
+            value: {{ .Chart.AppVersion }}
       containers:
       - name: server
         {{- if not .Values.image.server.overridePath }}
@@ -44,10 +50,14 @@ spec:
           mountPath: /run/secrets/tls
           readOnly: true
         env:
+          - name: MONOKLE_NAMESPACE
+            value: {{ include "monokle-admission-controller.namespace" . }}
           - name: MONOKLE_LOG_LEVEL
-            value: DEBUG
+            value: {{ .Values.logLevel }}
           - name: MONOKLE_IGNORE_NAMESPACES
-            value: ''
+            value: kube-node-lease,kube-public,kube-system,{{ include "monokle-admission-controller.namespace" . }},{{ .Values.ignoreNamespaces | join "," }}
+          - name: MONOKLE_CURRENT_VERSION
+            value: {{ .Chart.AppVersion }}
       volumes:
       - name: webhook-tls-certs
         secret:

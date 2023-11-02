@@ -7,9 +7,12 @@ set -euo pipefail
 basedir="$(dirname "$0")"
 
 # Generate install.yaml
-helm template "${basedir}/../helm" --set image.init.overridePath=admission-webhook-init --set image.server.overridePath=admission-webhook > "${basedir}/install.yaml"
+helm template "${basedir}/../helm" \
+--set image.init.overridePath=admission-webhook-init \
+--set image.server.overridePath=admission-webhook \
+--set logLevel=debug > "${basedir}/install.yaml"
 
 # Run deployment through skaffold with locally build images
-skaffold run -n monokle-admission-controller -f "${basedir}/skaffold.yaml"
+skaffold run -f "${basedir}/skaffold.yaml"
 
 echo "Deployment complete."

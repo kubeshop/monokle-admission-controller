@@ -2,6 +2,7 @@ import pino from 'pino';
 import {AnnotationSuppressor, Config, DisabledFixer, FingerprintSuppressor, MonokleValidator, RemotePluginLoader, ResourceParser, SchemaLoader} from '@monokle/validation';
 import {MonokleApplicablePolicy, MonoklePolicy, PolicyManager} from './policy-manager.js';
 import {AdmissionRequestObject} from './validation-server.js';
+import { V1Namespace } from '@kubernetes/client-node';
 
 export type MonokleApplicableValidator = {
   validator: MonokleValidator,
@@ -24,8 +25,8 @@ export class ValidatorManager {
     });
   }
 
-  getMatchingValidators(resource: AdmissionRequestObject, namespace: string): MonokleApplicableValidator[] {
-    const matchingPolicies = this._policyManager.getMatchingPolicies(resource, namespace);
+  getMatchingValidators(resource: AdmissionRequestObject, resourceNamespace?: V1Namespace): MonokleApplicableValidator[] {
+    const matchingPolicies = this._policyManager.getMatchingPolicies(resource, resourceNamespace);
 
     if (matchingPolicies.length === 0) {
       return [];

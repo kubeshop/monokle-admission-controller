@@ -12,6 +12,10 @@ build:
       context: ./admission-controller/init
       docker:
         dockerfile: ./admission-controller/init/Dockerfile
+    - image: admission-synchronizer
+      context: ./admission-controller/synchronizer
+      docker:
+        dockerfile: ./admission-controller/synchronizer/Dockerfile
 manifests:
   rawYaml:
     - ./scripts/install.yaml

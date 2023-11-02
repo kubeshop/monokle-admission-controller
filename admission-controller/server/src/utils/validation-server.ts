@@ -5,6 +5,7 @@ import {readFileSync} from 'fs';
 import {Message, Resource, RuleLevel, ValidationResult} from '@monokle/validation';
 import {V1ObjectMeta} from '@kubernetes/client-node';
 import {ValidatorManager} from './validator-manager.js';
+import { NamespaceGetter } from './namespace-getter.js';
 
 export type ValidationServerOptions = {
   port: number
@@ -56,7 +57,7 @@ export type Violation = {
 
 export class ValidationServer {
   private _server: ReturnType<typeof fastify>;
-  private _shouldValidate: boolean
+  private _namespaceGetter: NamespaceGetter;
 
   constructor(
     private readonly _validators: ValidatorManager,
@@ -67,8 +68,6 @@ export class ValidationServer {
       host: '0.0.0.0'
     }
   ) {
-    this._shouldValidate = false;
-
     try {
       this._server = fastify({
         https: {
@@ -81,15 +80,8 @@ export class ValidationServer {
       process.exit(1);
     }
 
+    this._namespaceGetter = new NamespaceGetter(this._logger);
     this._initRouting();
-  }
-
-  get shouldValidate() {
-    return this._shouldValidate;
-  }
-
-  set shouldValidate(value: boolean) {
-    this._shouldValidate = value;
   }
 
   async start() {
@@ -101,8 +93,6 @@ export class ValidationServer {
 
         this._logger.info(`Server listening at ${address}`);
 
-        this.shouldValidate = true;
-
         resolve(address);
       });
 
@@ -110,8 +100,6 @@ export class ValidationServer {
   }
 
   async stop() {
-    this.shouldValidate = false;
-
     if (this._server) {
       await this._server.close();
     }
@@ -123,7 +111,7 @@ export class ValidationServer {
       this._logger.trace({requestBody: req.body});
 
       const body = req.body as AdmissionRequest;
-      const namespace = body.request?.namespace;
+      const namespace = body.request?.namespace || body.request?.object?.metadata?.namespace;
 
       const response = {
         kind: body?.kind || '',
@@ -137,8 +125,8 @@ export class ValidationServer {
         }
       }
 
-      if (!namespace || this._ignoredNamespaces.includes(namespace)) {
-        this._logger.error({msg: 'No namespace found or namespace ignored', namespace});
+      if (namespace && this._ignoredNamespaces.includes(namespace)) {
+        this._logger.error({msg: 'Namespace ignored', namespace});
         return response;
       }
 
@@ -148,9 +136,11 @@ export class ValidationServer {
         return response;
       }
 
-      this._logger.debug({request: req});
+      const namespaceObject = namespace ? await this._namespaceGetter.getNamespace(namespace) : undefined;
 
-      const validators = this._validators.getMatchingValidators(resource, namespace);
+      this._logger.debug({request: req, namespaceObject});
+
+      const validators = this._validators.getMatchingValidators(resource, namespaceObject);
 
       this._logger.debug({msg: 'Matching validators', count: validators.length});
 

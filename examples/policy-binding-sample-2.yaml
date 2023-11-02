@@ -8,4 +8,4 @@ spec:
   matchResources:
     namespaceSelector:
       matchLabels:
-        namespace: default
+        name: default

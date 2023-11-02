@@ -19,26 +19,16 @@ minikube start --extra-config=apiserver.enable-admission-plugins=ValidatingAdmis
 ### Deploying (via Skaffold)
 
 ```bash
-./scripts/deploy.sh
+./scripts/dev-standalone.sh
 ```
 
-After changes in `./admission-controller` can be reloaded with:
+or for Cloud enabled version:
 
 ```bash
-skaffold dev -f scripts/skaffold.yaml
+/scripts/dev-cloud.sh cloudApiUrl
 ```
 
-You can also do manual clean-up and re-run `deploy.sh` script again:
-
-```bash
-kubectl delete all -n monokle-admission-controller --all && \
-kubectl delete validatingwebhookconfiguration.admissionregistration.k8s.io/monokle-admission-controller-webhook && \
-kubectl delete namespace monokle-admission-controller && \
-kubectl delete namespace nstest1 && \
-kubectl delete namespace nstest2 && \
-kubectl delete crd policies.monokle.io && \
-kubectl delete crd policybindings.monokle.io
-```
+This will run a watcher and reload any time `./admission-controller/*` folder changes.
 
 ### Deploying (via Helm + Minikube registry)
 
@@ -57,6 +47,9 @@ minikube image build -t admission-webhook-init -f ./Dockerfile .
 cd admission-controller/server
 minikube image build -t admission-webhook -f ./Dockerfile .
 
+cd admission-controller/synchronizer
+minikube image build -t admission-synchronizer -f ./Dockerfile .
+
 docker images
 ```
 
@@ -65,7 +58,9 @@ helm install monokle-ac ./helm \
 --set image.init.pullPolicy=Never \
 --set image.init.overridePath=admission-webhook-init \
 --set image.server.pullPolicy=Never \
---set image.server.overridePath=admission-webhook
+--set image.server.overridePath=admission-webhook \
+--set image.synchronizer.pullPolicy=Never \
+--set image.synchronizer.overridePath=admission-synchronizer
 ```
 
 To uninstall:
@@ -79,7 +74,7 @@ helm uninstall monokle-ac
 Namespaced resources (webhook server) will be deployed to dedicated `monokle-admission-controller` namespace, to watch it you can run:
 
 ```bash
-watch kubectl -n monokle-admission-controller get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets
+watch kubectl -n monokle-admission-controller get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets,policies,policybindings
 ```
 
 After it runs, the result should be something like:

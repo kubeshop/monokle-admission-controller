@@ -37,6 +37,24 @@ spec:
                           type: object
                           additionalProperties:
                             type: string
+                        matchExpressions:
+                          type: array
+                          items:
+                            type: object
+                            required:
+                              - key
+                              - operator
+                              - values
+                            properties:
+                              key:
+                                type: string
+                              operator:
+                                type: string
+                                enum: [In, NotIn]
+                              values:
+                                type: array
+                                items:
+                                  type: string
   scope: Cluster
   names:
     plural: policybindings

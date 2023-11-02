@@ -1,0 +1,49 @@
+{{- if .Values.automationToken }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monokle-admission-controller-synchronizer
+  namespace: {{ include "monokle-admission-controller.namespace" . }}
+  labels:
+    app: monokle-admission-controller-synchronizer
+    {{- include "monokle-admission-controller.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: monokle-admission-controller-synchronizer
+  template:
+    metadata:
+      labels:
+        app: monokle-admission-controller-synchronizer
+        {{- include "monokle-admission-controller.labels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: synchronizer
+        {{- if not .Values.image.synchronizer.overridePath }}
+        image: "{{ .Values.image.synchronizer.repository }}:{{ .Values.image.synchronizer.tag | default .Chart.AppVersion }}"
+        {{- else }}
+        image: {{ .Values.image.synchronizer.overridePath }}
+        {{- end }}
+        imagePullPolicy: {{ .Values.image.synchronizer.pullPolicy }}
+        volumeMounts:
+          - name: automation-token-secret
+            mountPath: /run/secrets/token
+            readOnly: true
+        env:
+          - name: MONOKLE_NAMESPACE
+            value: {{ include "monokle-admission-controller.namespace" . }}
+          - name: MONOKLE_LOG_LEVEL
+            value: {{ .Values.logLevel }}
+          - name: MONOKLE_IGNORE_NAMESPACES
+            value: kube-node-lease,kube-public,kube-system,{{ include "monokle-admission-controller.namespace" . }},{{ .Values.ignoreNamespaces | join "," }}
+          - name: MONOKLE_CLOUD_API_URL
+            value: {{ .Values.cloudApiUrl }}
+          - name: MONOKLE_CURRENT_VERSION
+            value: {{ .Chart.AppVersion }}
+      volumes:
+      - name: automation-token-secret
+        secret:
+          secretName: monokle-synchronizer-token
+      serviceAccountName: monokle-policies-synchronizer-sa
+{{- end }}
