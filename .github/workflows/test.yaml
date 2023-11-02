@@ -2,9 +2,23 @@ name: Test
 
 on:
   pull_request:
+    paths:
+      - .github/workflows/test.yaml
+      - admission-controller/**
+      - examples/**
+      - helm/**
+      - scripts/**
+      - test/**
   push:
     branches:
       - main
+    paths:
+      - .github/workflows/test.yaml
+      - admission-controller/**
+      - examples/**
+      - helm/**
+      - scripts/**
+      - test/**
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
