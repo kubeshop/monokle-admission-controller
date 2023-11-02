@@ -22,6 +22,8 @@
   </a>
 </p>
 
+> **IMPORTANT**: This is alpha version and may include breaking changes in the future which will require updating.
+
 ## Table of contents
 
 - [Overview](#overview)
