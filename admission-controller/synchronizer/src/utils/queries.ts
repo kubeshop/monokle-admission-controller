@@ -1,9 +1,10 @@
-import {ValidationConfig} from "@monokle/types";
-
 export type ClusterQueryResponseBindingPolicy = {
   id: string
-  content: ValidationConfig
-  projectId: string
+  content: string
+  project: {
+    id: string
+    name: string
+  }
 };
 
 export type ClusterQueryResponseBinding = {
@@ -13,54 +14,52 @@ export type ClusterQueryResponseBinding = {
   policy: ClusterQueryResponseBindingPolicy
 };
 
+export type ClusterQueryResponseNamespace = {
+  id: string
+  name: string
+};
+
 export type ClusterQueryResponse = {
   getCluster: {
-    cluster: {
-      id: string
-      name: string
-      namespaceSync: boolean
+    id: string
+    name: string
+    namespaceSync: boolean
 
-      namespaces: {
-        id: string
-        name: string
-      }[]
+    namespaces: ClusterQueryResponseNamespace[]
 
-      bindings: ClusterQueryResponseBinding[]
-    }
+    bindings: ClusterQueryResponseBinding[]
   }
 };
 
 export type ClusterDiscoveryMutationResponse = {
   clusterDiscovery: {
-    version: string
-    namespaces?: string[]
+    id: string
+    namespaces: string[]
   }
 };
 
 export const getClusterQuery = `
-  query getCluster {
-    getCluster {
-      cluster {
+  query getCluster($input: ClusterGetInput!) {
+    getCluster(input: $input) {
+      id
+      name
+      namespaceSync
+
+      namespaces {
         id
         name
-        namespaceSync
+      }
 
-        namespaces {
+      bindings {
+        id
+        mode
+        namespaces
+        policy {
           id
-          name
-        }
-
-        bindings {
-          id
-          mode
-          namespaces {
+          content
+          project {
             id
             name
-          }
-          policy {
-            id
-            content
-            projectId
           }
         }
       }
@@ -69,14 +68,14 @@ export const getClusterQuery = `
 `;
 
 export const clusterDiscoveryMutation = `
-  mutation clusterDiscovery($version: String!, $namespaces: String[]) {
-    clusterDiscovery(
+  mutation discoverCluster($version: String!, $namespaces: [String!]!) {
+    discoverCluster(
       input: {
         version: $version,
         namespaces: $namespaces
       }
     ) {
-      version
+      id
       namespaces
     }
   }

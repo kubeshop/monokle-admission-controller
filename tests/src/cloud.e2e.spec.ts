@@ -1,7 +1,7 @@
 import { join, resolve } from 'path';
 import { afterEach, assert, beforeAll, describe, it } from 'vitest'
 import shell from 'shelljs';
-import { parse } from 'yaml'
+import { parse } from 'yaml';
 import { startMockServer } from './utils/server';
 import { EXPECTED_CRDS } from './utils/expected-crds';
 
