@@ -48,7 +48,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./admission-controller/${{ matrix.from }}/
-          platforms: linux/amd64,linux/arm64,linux/arm/v8
+          platforms: linux/amd64,linux/arm64
           file: ./admission-controller/${{ matrix.from }}/Dockerfile
           tags: |
             kubeshop/monokle-admission-controller-${{ matrix.from }}:latest
@@ -65,6 +65,7 @@ jobs:
   build-and-push-helm:
     runs-on: ubuntu-latest
     name: Helm chart
+    needs: [build-and-push-docker]
 
     steps:
       - name: Extract version from tag
