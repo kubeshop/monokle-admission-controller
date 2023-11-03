@@ -45,9 +45,10 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Build image and push to Docker Hub
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: ./admission-controller/${{ matrix.from }}/
+          platforms: linux/amd64,linux/arm64,linux/arm/v8,linux/arm/v7
           file: ./admission-controller/${{ matrix.from }}/Dockerfile
           tags: |
             kubeshop/monokle-admission-controller-${{ matrix.from }}:latest
