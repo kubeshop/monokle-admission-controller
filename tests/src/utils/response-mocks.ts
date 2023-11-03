@@ -35,6 +35,10 @@ export const RESPONSE_MOCK: Record<string, any> = {
           {
             id: "ns-1",
             name: "my-namespace-1"
+          },
+          {
+            id: "ns-2",
+            name: "my-namespace-2"
           }
         ],
         bindings: [
@@ -44,12 +48,7 @@ export const RESPONSE_MOCK: Record<string, any> = {
             namespaces: ["ns-0","ns-1"],
             policy: {
               id: "cluster-1-binding-1-policy",
-              content: {
-                plugins: {
-                  "open-policy-agent": true,
-                  "pod-security-standards": true
-                }
-              },
+              content: "plugins:\n  open-policy-agent: true\n  pod-security-standards: true\n",
               project: {
                 id: "cluster-1-binding-1-policy-project",
                 name: "cluster-1-binding-1-policy-project"
@@ -62,21 +61,7 @@ export const RESPONSE_MOCK: Record<string, any> = {
             namespaces: ["ns-2","ns-1"],
             policy: {
               id: "cluster-1-binding-2-policy",
-              content: {
-                  plugins: {
-                    'yaml-syntax': true,
-                    'open-policy-agent': true,
-                    'resource-links': true,
-                  },
-                  rules: {
-                    'yaml-syntax/no-bad-alias': "warn",
-                    'yaml-syntax/no-bad-directive': false,
-                    'open-policy-agent/no-last-image': "err",
-                    'open-policy-agent/cpu-limit': "err",
-                    'open-policy-agent/memory-limit': "err",
-                    'open-policy-agent/memory-request': "err",
-                  }
-              },
+              content: "plugins:\n  pod-security-standards: true\n  yaml-syntax: false\n  resource-links: false\n",
               project: {
                 id: "cluster-1-binding-2-policy-project",
                 name: "cluster-1-binding-2-policy-project"
