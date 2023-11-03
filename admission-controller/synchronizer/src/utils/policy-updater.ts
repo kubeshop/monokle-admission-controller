@@ -1,7 +1,8 @@
 import k8s from '@kubernetes/client-node';
 import _ from "lodash";
 import pino from 'pino';
-import {ClusterQueryResponseBinding, ClusterQueryResponseBindingPolicy} from "./queries";
+import {parse} from 'yaml'
+import {ClusterQueryResponseBinding, ClusterQueryResponseBindingPolicy, ClusterQueryResponseNamespace} from "./queries";
 
 export class PolicyUpdater {
   protected _bindingsCache = new Map<string, ClusterQueryResponseBinding>();
@@ -15,7 +16,20 @@ export class PolicyUpdater {
     this._k8sClient = this._k8sConfig.makeApiClient(k8s.CustomObjectsApi)
   }
 
-  async update(bindings: ClusterQueryResponseBinding[]) {
+  async init() {
+    const existingPolicies = await this.listPolicies();
+    const existingBindings = await this.listBindings();
+
+    for (const policy of existingPolicies) {
+      this._policiesCache.set(policy.metadata.name!, policy);
+    }
+
+    for (const binding of existingBindings) {
+      this._bindingsCache.set(binding.metadata.name!, binding);
+    }
+  }
+
+  async update(bindings: ClusterQueryResponseBinding[], namespaces: ClusterQueryResponseNamespace[]) {
     const policies = bindings.map((binding) => binding.policy);
 
     const existingPolicyIds = Array.from(this._policiesCache.keys());
@@ -52,12 +66,27 @@ export class PolicyUpdater {
 
     for (const binding of bindings) {
       if (!this._bindingsCache.has(binding.id)) {
-        await this.createBinding(binding);
+        await this.createBinding(binding, namespaces);
         this._bindingsCache.set(binding.id, binding);
       } else if (!this.isEqualBinding(this._bindingsCache.get(binding.id)!, binding)) {
-        await this.updateBinding(binding);
+        await this.updateBinding(binding, namespaces);
         this._bindingsCache.set(binding.id, binding);
       }
+    }
+  }
+
+  protected async listPolicies() {
+    try {
+      const response = await this._k8sClient.listClusterCustomObject(
+        'monokle.io',
+        'v1alpha1',
+        'policies'
+      );
+
+      return (response.body as any).items;
+    } catch (err: any) {
+      this._logger.error({ msg: 'Failed to list policies', errMsg: err.message, err });
+      return [];
     }
   }
 
@@ -71,36 +100,57 @@ export class PolicyUpdater {
   }
 
   protected async createPolicy(policy: ClusterQueryResponseBindingPolicy) {
-    await this._k8sClient.createClusterCustomObject(
-      'monokle.io',
-      'v1alpha1',
-      'policies',
-      {
-        apiVersion: 'monokle.io/v1alpha1',
-        kind: 'MonoklePolicy',
-        metadata: {
-          name: policy.id,
-        },
-        spec: policy.content
+    try {
+      await this._k8sClient.createClusterCustomObject(
+        'monokle.io',
+        'v1alpha1',
+        'policies',
+        {
+          apiVersion: 'monokle.io/v1alpha1',
+          kind: 'MonoklePolicy',
+          metadata: {
+            name: policy.id,
+          },
+          spec: parse(policy.content)
+        }
+      )
+    } catch (err: any) {
+      // PolicyUpdater cache gets wiped out on pod restart. Policies may be there so we treat 'AlreadyExists' as success.
+      if (err.body?.reason !== 'AlreadyExists') {
+        throw err;
       }
-    )
+    }
   }
 
   protected async updatePolicy(policy: ClusterQueryResponseBindingPolicy) {
-    await this._k8sClient.replaceClusterCustomObject(
+    await this._k8sClient.patchClusterCustomObject(
       'monokle.io',
       'v1alpha1',
       'policies',
       policy.id,
       {
-        apiVersion: 'monokle.io/v1alpha1',
-        kind: 'MonoklePolicy',
-        metadata: {
-          name: policy.id,
-        },
-        spec: policy.content
-      }
+        spec: parse(policy.content)
+      },
+      undefined,
+      undefined,
+      undefined,
+      { headers: { 'Content-Type': k8s.PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
     )
+  }
+
+  protected async listBindings() {
+    try {
+      const response = await this._k8sClient.listClusterCustomObject(
+        'monokle.io',
+        'v1alpha1',
+        'policybindings'
+      );
+
+      return (response.body as any).items;
+    } catch (err: any) {
+      this._logger.error({ msg: 'Failed to list bindings', errMsg: err.message, err });
+      return [];
+    }
   }
 
   protected async deleteBinding(bindingId: string) {
@@ -112,40 +162,58 @@ export class PolicyUpdater {
     )
   }
 
-  protected async createBinding(binding: ClusterQueryResponseBinding) {
-    await this._k8sClient.createClusterCustomObject(
-      'monokle.io',
-      'v1alpha1',
-      'policybindings',
-      {
-        apiVersion: 'monokle.io/v1alpha1',
-        kind: 'MonoklePolicyBinding',
-        metadata: {
-          name: binding.id,
-        },
-        spec: this.createBindingSpec(binding)
+  protected async createBinding(binding: ClusterQueryResponseBinding, namespaces: ClusterQueryResponseNamespace[]) {
+    try {
+      await this._k8sClient.createClusterCustomObject(
+        'monokle.io',
+        'v1alpha1',
+        'policybindings',
+        {
+          apiVersion: 'monokle.io/v1alpha1',
+          kind: 'MonoklePolicyBinding',
+          metadata: {
+            name: binding.id,
+          },
+          spec: this.createBindingSpec(binding, namespaces)
+        }
+      )
+    } catch (err: any) {
+      // PolicyUpdater cache gets wiped out on pod restart. Bindings may be there so we treat 'AlreadyExists' as success.
+      if (err.body?.reason !== 'AlreadyExists') {
+        throw err;
       }
-    )
+    }
   }
 
-  protected async updateBinding(binding: ClusterQueryResponseBinding) {
-    await this._k8sClient.replaceClusterCustomObject(
+  protected async updateBinding(binding: ClusterQueryResponseBinding, namespaces: ClusterQueryResponseNamespace[]) {
+    await this._k8sClient.patchClusterCustomObject(
       'monokle.io',
       'v1alpha1',
       'policybindings',
       binding.id,
       {
-        apiVersion: 'monokle.io/v1alpha1',
-        kind: 'MonoklePolicyBinding',
-        metadata: {
-          name: binding.id,
-        },
-        spec: this.createBindingSpec(binding)
-      }
+        spec: this.createBindingSpec(binding, namespaces)
+      },
+      undefined,
+      undefined,
+      undefined,
+      { headers: { 'Content-Type': k8s.PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
     )
   }
 
-  protected createBindingSpec(binding: ClusterQueryResponseBinding) {
+  protected createBindingSpec(binding: ClusterQueryResponseBinding, namespaces: ClusterQueryResponseNamespace[]) {
+    const namespacesNames = binding.namespaces.reduce<string[]>((acc, namespaceId) => {
+      const namespace = namespaces.find((namespace) => namespace.id === namespaceId);
+
+      if (namespace) {
+        acc.push(namespace.name);
+      } else {
+        this._logger.warn({ msg: 'Namespace not found for binding', namespaceId, namespaces });
+      }
+
+      return acc;
+    }, []);
+
     return {
       policyName: binding.policy.id,
       validationActions: ['Warn'],
@@ -154,7 +222,7 @@ export class PolicyUpdater {
           matchExpressions: [{
             key: 'name',
             operator: binding.mode === 'ALLOW_LIST' ? 'In' : 'NotIn',
-            values: binding.namespaces
+            values: namespacesNames
           }]
         }
       }
@@ -164,10 +232,10 @@ export class PolicyUpdater {
   protected isEqualBinding(binding1: ClusterQueryResponseBinding, binding2: ClusterQueryResponseBinding): boolean {
     // Do not compare policy content since it does not affect MonoklePolicyBinding.
     const binding1Copy = { ...binding1 };
-    (binding1Copy as any).policy = { id: binding1.policy.id };
+    (binding1Copy as any).policy = { id: binding1.policy?.id };
 
     const binding2Copy = { ...binding2 };
-    (binding2Copy as any).policy = { id: binding2.policy.id };
+    (binding2Copy as any).policy = { id: binding2.policy?.id };
 
     return _.isEqual(binding1Copy, binding2Copy);
   }

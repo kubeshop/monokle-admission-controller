@@ -35,15 +35,16 @@ const tokenPath = path.join('/run/secrets/token', '.token');
   const namespaceInformer = await getNamespaceInformer(
     kc,
     (err: any) => {
-      logger.error({msg: 'Informer: Namespaces: Error', err: err.message, body: err.body});
+      logger.error({msg: 'Informer: Namespaces: Error', err: err.message, body: err.body, code: err.code});
       logger.error(err);
     }
   );
   const namespaceListener = new NamespaceListener(namespaceInformer, logger);
 
+  await policyUpdater.init();
+
   let hasPendingQuery = false;
-  let shouldSyncNamespaces = false;
-  let propagatedNamespaces: string[] = [];
+  let shouldSyncNamespaces = true;
   setInterval(async () => {
     if (hasPendingQuery) {
       return;
@@ -63,7 +64,7 @@ const tokenPath = path.join('/run/secrets/token', '.token');
     try {
       logger.debug({msg: 'Fetching policies'});
 
-      const clusterData = await apiFetcher.query<ClusterQueryResponse>(getClusterQuery);
+      const clusterData = await apiFetcher.query<ClusterQueryResponse>(getClusterQuery, { input: {} });
 
       if (!clusterData.success) {
         throw new Error(clusterData.error);
@@ -73,10 +74,9 @@ const tokenPath = path.join('/run/secrets/token', '.token');
         throw new Error('No cluster data found in API response');
       }
 
-      await policyUpdater.update(clusterData.data.getCluster.cluster.bindings);
+      await policyUpdater.update(clusterData.data.getCluster.bindings, clusterData.data.getCluster.namespaces);
 
-      shouldSyncNamespaces = clusterData.data.getCluster.cluster.namespaceSync;
-      propagatedNamespaces = clusterData.data.getCluster.cluster.namespaces.map((namespace) => namespace.name);
+      shouldSyncNamespaces = clusterData.data.getCluster.namespaceSync;
 
       if (shouldSyncNamespaces && !namespaceListener.isRunning) {
         await namespaceListener.start();
@@ -84,7 +84,7 @@ const tokenPath = path.join('/run/secrets/token', '.token');
         await namespaceListener.stop();
       }
     } catch (err: any) {
-      logger.error({msg: 'Error: Policy update', err: err.message, body: err.body});
+      logger.error({msg: 'Error: Policy updater', errMsg: err.message, body: err.body, code: err.code, err});
     }
 
     try {
@@ -96,11 +96,8 @@ const tokenPath = path.join('/run/secrets/token', '.token');
       if (shouldSyncNamespaces) {
         const namespaces = namespaceListener.namespaces;
         const filteredNamespaces = namespaces.filter((namespace) => !IGNORED_NAMESPACES.includes(namespace));
-        const hasDifferentNamespaces = _.difference(filteredNamespaces, propagatedNamespaces).length > 0;
 
-        if (hasDifferentNamespaces) {
-          requestData.namespaces = filteredNamespaces;
-        }
+        requestData.namespaces = filteredNamespaces;
       }
 
       logger.debug({msg: 'Sending heartbeat', requestData});
@@ -111,7 +108,7 @@ const tokenPath = path.join('/run/secrets/token', '.token');
         throw new Error(discoveryResponse.error);
       }
     } catch (err: any) {
-      logger.error({msg: 'Error: Namespace update', err: err.message, body: err.body});
+      logger.error({msg: 'Error: Namespace update', err: err.message, body: err.body, code: err.code});
     }
 
     hasPendingQuery = false;

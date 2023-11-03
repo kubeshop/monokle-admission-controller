@@ -1,7 +1,7 @@
 import { join, resolve } from 'path';
 import { afterEach, assert, beforeAll, describe, it } from 'vitest'
 import shell from 'shelljs';
-import { parse } from 'yaml'
+import { parse } from 'yaml';
 import { startMockServer } from './utils/server';
 import { EXPECTED_CRDS } from './utils/expected-crds';
 
@@ -56,10 +56,10 @@ describe(`Cloud (dir: ${mainDir})`, () => {
     mockServer = await startMockServer('empty');
 
     const requestsData = await waitForRequests(mockServer, 2);
-    const requestData = requestsData.find(requestData => requestData.body.query.includes('clusterDiscovery'));
+    const requestData = requestsData.find(requestData => requestData.body.query.includes('discoverCluster'));
 
     assert.match(requestData.token, /ApiKey SAMPLE_TOKEN/);
-    assert.match(requestData.body.query, /mutation clusterDiscovery/);
+    assert.match(requestData.body.query, /mutation discoverCluster/);
   }, 25 * 1000);
 
   it('propagates fetched cluster data as CRDs', async () => {

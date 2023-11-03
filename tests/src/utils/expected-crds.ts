@@ -60,17 +60,9 @@ export const EXPECTED_CRDS: Record<string, any> = {
     },
     spec: {
       plugins: {
-        'yaml-syntax': true,
-        'open-policy-agent': true,
-        'resource-links': true,
-      },
-      rules: {
-        'yaml-syntax/no-bad-alias': "warn",
-        'yaml-syntax/no-bad-directive': false,
-        'open-policy-agent/no-last-image': "err",
-        'open-policy-agent/cpu-limit': "err",
-        'open-policy-agent/memory-limit': "err",
-        'open-policy-agent/memory-request': "err",
+        'pod-security-standards': true,
+        'yaml-syntax': false,
+        'resource-links': false,
       }
     }
   }
