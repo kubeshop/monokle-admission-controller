@@ -47,6 +47,7 @@ yq -i ".appVersion = \"$VERSION\"" "$rootdir/helm/Chart.yaml"
 echo "Updating node packages version..."
 cd "$rootdir/admission-controller/init" && npm version $VERSION --git-tag-version false
 cd "$rootdir/admission-controller/server" && npm version $VERSION --git-tag-version false
+cd "$rootdir/admission-controller/synchronizer" && npm version $VERSION --git-tag-version false
 
 echo "Adding changes to git..."
 cd "$rootdir"
