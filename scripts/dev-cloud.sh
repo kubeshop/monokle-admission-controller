@@ -6,6 +6,7 @@ set -euo pipefail
 
 basedir="$(dirname "$0")"
 cloudApiUrl="$1"
+automationToken="$2"
 
 # Generate install.yaml
 #
@@ -18,7 +19,7 @@ helm template "${basedir}/../helm" \
 --set image.synchronizer.overridePath=admission-synchronizer \
 --set logLevel=debug \
 --set cloudApiUrl=$cloudApiUrl \
---set automationToken=SAMPLE_TOKEN > "${basedir}/install.yaml"
+--set automationToken=$automationToken > "${basedir}/install.yaml"
 
 # Run development through skaffold with locally build images
 skaffold dev -f "${basedir}/skaffold.yaml"
