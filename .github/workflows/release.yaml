@@ -10,11 +10,12 @@ jobs:
 
   build-and-push-docker:
     runs-on: ubuntu-latest
-    name: Docker images
+    name: Build Docker image
     strategy:
       fail-fast: true
       matrix:
         from: [init, server, synchronizer]
+        platform: [linux/amd64, linux/arm/v7, linux/arm64/v8]
 
     steps:
       - name: Extract version from tag
@@ -53,7 +54,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./admission-controller/${{ matrix.from }}/
-          platforms: linux/amd64,linux/arm/v7,linux/arm64/v8
+          platforms: ${{matrix.platform}}
           file: ./admission-controller/${{ matrix.from }}/Dockerfile
           tags: |
             kubeshop/monokle-admission-controller-${{ matrix.from }}:latest
