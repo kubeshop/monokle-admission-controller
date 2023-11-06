@@ -53,7 +53,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./admission-controller/${{ matrix.from }}/
-          platforms: amd64,arm32v7,arm64v8
+          platforms: linux/amd64,linux/arm/v7,linux/arm64/v8
           file: ./admission-controller/${{ matrix.from }}/Dockerfile
           tags: |
             kubeshop/monokle-admission-controller-${{ matrix.from }}:latest
