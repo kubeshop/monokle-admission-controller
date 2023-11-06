@@ -1,5 +1,5 @@
-ARG BUILD_IMAGE="node:20.8-alpine"
-ARG PRODUCTION_IMAGE="node:20.8-alpine"
+ARG BUILD_IMAGE="node:lts-alpine3.16"
+ARG PRODUCTION_IMAGE="node:lts-alpine3.16"
 
 #####################
 # Compile container
