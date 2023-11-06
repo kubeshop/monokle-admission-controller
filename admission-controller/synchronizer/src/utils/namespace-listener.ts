@@ -4,7 +4,7 @@ import {InformerWrapper} from './get-informer.js';
 
 export class NamespaceListener {
   private _isRunning = false;
-  private _namespaces = new Set<V1Namespace>();
+  private _namespaces = new Map<string, V1Namespace>();
 
   constructor(
     private readonly _namespaceInformer: InformerWrapper<V1Namespace>,
@@ -20,7 +20,7 @@ export class NamespaceListener {
   }
 
   get namespaces(): string[] {
-    return Array.from(this._namespaces).map(namespace => namespace.metadata!.name!);
+    return Array.from(this._namespaces.keys());
   }
 
   async start() {
@@ -36,12 +36,12 @@ export class NamespaceListener {
   private onNamespace(namespace: V1Namespace) {
     this._logger.debug({msg: 'Namespace created/updated', namespace});
 
-    this._namespaces.add(namespace);
+    this._namespaces.set(namespace.metadata!.name!, namespace);
   }
 
   private onNamespaceRemoval(namespace: V1Namespace) {
     this._logger.debug({msg: 'Namespace removed', namespace});
 
-    this._namespaces.delete(namespace);
+    this._namespaces.delete(namespace.metadata!.name!);
   }
 }
