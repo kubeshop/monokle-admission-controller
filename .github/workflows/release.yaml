@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
+  pull_request:
 
 jobs:
 
@@ -18,7 +19,8 @@ jobs:
     steps:
       - name: Extract version from tag
         id: extract_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+        run: echo "VERSION=0.2.4" >> $GITHUB_ENV
+        # run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
       - name: Debug version
         run: echo ${{ env.VERSION }}
@@ -48,12 +50,12 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./admission-controller/${{ matrix.from }}/
-          platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7,linux/arm64/v8
+          platforms: linux/amd64,linux/arm64,linux/arm64/v8
           file: ./admission-controller/${{ matrix.from }}/Dockerfile
           tags: |
             kubeshop/monokle-admission-controller-${{ matrix.from }}:latest
             kubeshop/monokle-admission-controller-${{ matrix.from }}:${{ env.VERSION }}
-          push: true
+          push: false
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
@@ -62,65 +64,65 @@ jobs:
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
-  build-and-push-helm:
-    runs-on: ubuntu-latest
-    name: Helm chart
-    needs: [build-and-push-docker]
+  # build-and-push-helm:
+  #   runs-on: ubuntu-latest
+  #   name: Helm chart
+  #   needs: [build-and-push-docker]
 
-    steps:
-      - name: Extract version from tag
-        id: extract_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+  #   steps:
+  #     - name: Extract version from tag
+  #       id: extract_version
+  #       run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
-      - name: Debug version
-        run: echo ${{ env.VERSION }}
+  #     - name: Debug version
+  #       run: echo ${{ env.VERSION }}
 
-      - name: Login Helm to DockerHub registry
-        run: |
-           helm registry login registry-1.docker.io -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin <<< "${{ secrets.DOCKERHUB_TOKEN }}"
+  #     - name: Login Helm to DockerHub registry
+  #       run: |
+  #          helm registry login registry-1.docker.io -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin <<< "${{ secrets.DOCKERHUB_TOKEN }}"
 
-      - name: Checkout Repository
-        uses: actions/checkout@v2
+  #     - name: Checkout Repository
+  #       uses: actions/checkout@v2
 
-      # See https://docs.docker.com/docker-hub/oci-artifacts/#push-a-helm-chart
-      - name: Build and publish Helm chart
-        env:
-          VERSION: ${{ env.VERSION }}
-        run: |
-          echo "Building Helm chart with version: ${VERSION}"
-          helm package ./helm --version ${VERSION}
-          helm push monokle-admission-controller-${VERSION}.tgz oci://registry-1.docker.io/kubeshop
+  #     # See https://docs.docker.com/docker-hub/oci-artifacts/#push-a-helm-chart
+  #     - name: Build and publish Helm chart
+  #       env:
+  #         VERSION: ${{ env.VERSION }}
+  #       run: |
+  #         echo "Building Helm chart with version: ${VERSION}"
+  #         helm package ./helm --version ${VERSION}
+  #         helm push monokle-admission-controller-${VERSION}.tgz oci://registry-1.docker.io/kubeshop
 
-  create-release:
-    runs-on: ubuntu-latest
-    name: GitHub release
-    needs: [build-and-push-docker, build-and-push-helm]
+  # create-release:
+  #   runs-on: ubuntu-latest
+  #   name: GitHub release
+  #   needs: [build-and-push-docker, build-and-push-helm]
 
-    steps:
-      - name: Extract version from tag
-        id: extract_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+  #   steps:
+  #     - name: Extract version from tag
+  #       id: extract_version
+  #       run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
-      - name: Debug version
-        run: echo ${{ env.VERSION }}
+  #     - name: Debug version
+  #       run: echo ${{ env.VERSION }}
 
-      - name: Checkout Repository
-        uses: actions/checkout@v2
+  #     - name: Checkout Repository
+  #       uses: actions/checkout@v2
 
-      - name: Build release artifacts
-        env:
-          VERSION: ${{ env.VERSION }}
-        run: |
-          helm package ./helm --version ${VERSION}
-          helm template ./helm --version ${VERSION} > install-standalone.yaml
-          helm template ./helm --version ${VERSION} --set automationToken=SAMPLE_TOKEN > install-cloud.yaml
-          mv monokle-admission-controller-${VERSION}.tgz helm.tgz
+  #     - name: Build release artifacts
+  #       env:
+  #         VERSION: ${{ env.VERSION }}
+  #       run: |
+  #         helm package ./helm --version ${VERSION}
+  #         helm template ./helm --version ${VERSION} > install-standalone.yaml
+  #         helm template ./helm --version ${VERSION} --set automationToken=SAMPLE_TOKEN > install-cloud.yaml
+  #         mv monokle-admission-controller-${VERSION}.tgz helm.tgz
 
-      - name: Create release and upload artifacts
-        uses: ncipollo/release-action@v1
-        with:
-          name: "Release ${{ env.VERSION }}"
-          allowUpdates: true
-          artifacts: 'helm.tgz,install-cloud.yaml,install-standalone.yaml'
-          omitBody: true
-          token: ${{ secrets.CI_BOT_TOKEN }}
+  #     - name: Create release and upload artifacts
+  #       uses: ncipollo/release-action@v1
+  #       with:
+  #         name: "Release ${{ env.VERSION }}"
+  #         allowUpdates: true
+  #         artifacts: 'helm.tgz,install-cloud.yaml,install-standalone.yaml'
+  #         omitBody: true
+  #         token: ${{ secrets.CI_BOT_TOKEN }}
