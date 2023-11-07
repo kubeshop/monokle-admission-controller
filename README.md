@@ -87,7 +87,7 @@ _You can read more about DockerHub OCI registry [here](https://docs.docker.com/d
 Or from GitHub release:
 
 ```bash
-helm install my-release https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.2.3/helm.tgz --set automationToken=YOUR_AUTOMATION_TOKEN
+helm install my-release https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.2.4/helm.tgz --set automationToken=YOUR_AUTOMATION_TOKEN
 ```
 
 > See [customization section](#customizing-helm-deployment) below on what can be customized with Helm variables.
@@ -97,7 +97,7 @@ helm install my-release https://github.com/kubeshop/monokle-admission-controller
 You can install Monokle Admission Controller using `kubectl` and dedicated cloud install manifest:
 
 ```bash
-kubectl apply -f https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.2.3/install-cloud.yaml
+kubectl apply -f https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.2.4/install-cloud.yaml
 ```
 
 Since Monokle Cloud automation token needs to be provided, there is a dedicated secret created which needs to be updated:
@@ -121,7 +121,7 @@ _You can read more about DockerHub OCI registry [here](https://docs.docker.com/d
 Or from GitHub release:
 
 ```bash
-helm install my-release https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.2.3/helm.tgz
+helm install my-release https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.2.4/helm.tgz
 ```
 
 > See [customization section](#customizing-helm-deployment) below on what can be customized with Helm variables.
@@ -131,7 +131,7 @@ helm install my-release https://github.com/kubeshop/monokle-admission-controller
 You can install Monokle Admission Controller using `kubectl` and dedicated standalone install manifest:
 
 ```bash
-kubectl apply -f https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.2.3/install-standalone.yaml
+kubectl apply -f https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.2.4/install-standalone.yaml
 ```
 
 ## Usage
