@@ -63,7 +63,7 @@ helm install monokle-ac ./helm \
 --set image.server.overridePath=admission-webhook \
 --set image.synchronizer.pullPolicy=Never \
 --set image.synchronizer.overridePath=admission-synchronizer \
---namespace mac-test \
+--namespace monokle \
 --create-namespace
 ```
 

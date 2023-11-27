@@ -140,6 +140,9 @@ jobs:
             --namespace=mac-test \
             --create-namespace
 
+      - name: List charts
+        run: helm list -A
+
       - name: Preview namespace state
         run: kubectl -n mac-test get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets
 
@@ -150,6 +153,9 @@ jobs:
       - name: Test
         working-directory: ./tests/
         run: MONOKLE_NAMESPACE=mac-test npm run test standalone
+
+      - name: Helm uninstall
+        run: helm uninstall monokle-ac -n mac-test
 
   test-helm-cloud:
     name: Helm (Cloud)
@@ -210,6 +216,9 @@ jobs:
             --namespace=mac-test \
             --create-namespace
 
+      - name: List charts
+        run: helm list -A
+
       - name: Preview namespace state
         run: kubectl -n mac-test get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets
 
@@ -220,3 +229,6 @@ jobs:
       - name: Test
         working-directory: ./tests/
         run: MONOKLE_NAMESPACE=mac-test npm run test cloud
+
+      - name: Helm uninstall
+        run: helm uninstall monokle-ac -n mac-test

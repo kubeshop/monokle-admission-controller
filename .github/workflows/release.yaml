@@ -115,8 +115,8 @@ jobs:
           VERSION: ${{ env.VERSION }}
         run: |
           helm package ./helm --version ${VERSION}
-          helm template ./helm --version ${VERSION} > install-standalone.yaml
-          helm template ./helm --version ${VERSION} --set automationToken=SAMPLE_TOKEN > install-cloud.yaml
+          helm template ./helm --version ${VERSION} --namespace monokle > install-standalone.yaml
+          helm template ./helm --version ${VERSION} --namespace monokle --set automationToken=SAMPLE_TOKEN > install-cloud.yaml
           mv monokle-admission-controller-${VERSION}.tgz helm.tgz
 
       - name: Create release and upload artifacts
