@@ -23,8 +23,6 @@ image:
 
 replicas: 1
 
-createNamespace: false
-
 # Do not validate resources from below namespaces.
 ignoreNamespaces:
 #   - ns1

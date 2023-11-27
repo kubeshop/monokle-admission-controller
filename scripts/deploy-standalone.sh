@@ -12,8 +12,10 @@ helm template "${basedir}/../helm" \
 --set image.init.overridePath=admission-webhook-init \
 --set image.server.overridePath=admission-webhook \
 --set logLevel=debug > "${basedir}/install.yaml" \
---set createNamespace=true \
 --namespace "$namespace"
+
+# Create namespace
+kubectl create ns "$namespace"
 
 # Run deployment through skaffold with locally build images
 skaffold run -f "${basedir}/skaffold.yaml"

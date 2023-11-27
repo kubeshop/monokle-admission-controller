@@ -21,8 +21,10 @@ helm template "${basedir}/../helm" \
 --set logLevel=debug \
 --set cloudApiUrl=$cloudApiUrl \
 --set automationToken=$automationToken > "${basedir}/install.yaml" \
---set createNamespace=true \
 --namespace "$namespace"
+
+# Create namespace
+kubectl create ns "$namespace"
 
 # Run development through skaffold with locally build images
 skaffold dev -f "${basedir}/skaffold.yaml"

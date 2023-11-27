@@ -63,14 +63,14 @@ helm install monokle-ac ./helm \
 --set image.server.overridePath=admission-webhook \
 --set image.synchronizer.pullPolicy=Never \
 --set image.synchronizer.overridePath=admission-synchronizer \
---set createNamespace=true \
---namespace monokle
+--namespace mac-test \
+--create-namespace
 ```
 
 Checking if it's ok:
 
 ```bash
-helm list
+helm list -A
 ```
 
 To uninstall:

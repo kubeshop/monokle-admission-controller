@@ -132,14 +132,13 @@ jobs:
           eval $(minikube -p minikube docker-env)
           helm package ./helm --version 0.0.0
           helm install monokle-ac monokle-admission-controller-0.0.0.tgz \
-            --set namespace=mac-test \
             --set image.init.pullPolicy=Never \
             --set image.init.overridePath=admission-webhook-init \
             --set image.server.pullPolicy=Never \
             --set image.server.overridePath=admission-webhook \
             --set logLevel=debug \
-            --set createNamespace=true \
-            --namespace=mac-test
+            --namespace=mac-test \
+            --create-namespace
 
       - name: Preview namespace state
         run: kubectl -n mac-test get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets
@@ -199,7 +198,6 @@ jobs:
           eval $(minikube -p minikube docker-env)
           helm package ./helm --version 0.0.0
           helm install monokle-ac monokle-admission-controller-0.0.0.tgz \
-            --set namespace=mac-test \
             --set image.init.pullPolicy=Never \
             --set image.init.overridePath=admission-webhook-init \
             --set image.server.pullPolicy=Never \
@@ -209,8 +207,8 @@ jobs:
             --set logLevel=debug \
             --set cloudApiUrl="host.minikube.internal:5000" \
             --set automationToken=SAMPLE_TOKEN \
-            --set createNamespace=true \
-            --namespace=mac-test
+            --namespace=mac-test \
+            --create-namespace
 
       - name: Preview namespace state
         run: kubectl -n mac-test get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets
