@@ -6,7 +6,7 @@ import { startMockServer } from './utils/server';
 import { EXPECTED_CRDS } from './utils/expected-crds';
 
 const VERBOSE = process.env.VERBOSE === 'true';
-const NAMESPACE = process.env.MONOKLE_NAMESPACE || 'monokle-admission-controller';
+const NAMESPACE = process.env.MONOKLE_NAMESPACE || 'monokle';
 
 const currentDir = __dirname;
 const mainDir = resolve(join(currentDir, '..', '..'));

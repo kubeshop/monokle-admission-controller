@@ -23,9 +23,6 @@ image:
 
 replicas: 1
 
-# Deploy Monokle Admission Controller resources to below namespace.
-namespace: monokle-admission-controller
-
 # Do not validate resources from below namespaces.
 ignoreNamespaces:
 #   - ns1

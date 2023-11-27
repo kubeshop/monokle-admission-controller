@@ -60,12 +60,12 @@ Learn more about each Core Plugin in the [Core Plugins Documentation](https://gi
 
 ## Installation
 
-Installing Monokle Admission Controller creates dedicated `monokle-admission-controller` namespace where all the namespaced resources are then deployed.
+Installing Monokle Admission Controller bunch of resources so it is recommended to install it to separate namespace. This can be done with `-n namespace` flag for Helm. For `install-*.yaml` scripts, it will be installed to **monokle** namespace which needs to be created before running install script.
 
 You can see all deployed resources with e.g. `kubectl`:
 
 ```bash
-kubectl -n monokle-admission-controller get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets
+kubectl -n monokle get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets
 ```
 
 ### With Cloud Sync
@@ -79,7 +79,7 @@ The only required configuration is an Automation Token which can be generated in
 Latest Monokle Admission controller can be installed directly from DockerHub OCI registry:
 
 ```bash
-helm install my-release oci://registry-1.docker.io/kubeshop/monokle-admission-controller --set automationToken=YOUR_AUTOMATION_TOKEN
+helm install my-release oci://registry-1.docker.io/kubeshop/monokle-admission-controller --set automationToken=YOUR_AUTOMATION_TOKEN -n monokle
 ```
 
 _You can read more about DockerHub OCI registry [here](https://docs.docker.com/docker-hub/oci-artifacts/)_.
@@ -87,8 +87,10 @@ _You can read more about DockerHub OCI registry [here](https://docs.docker.com/d
 Or from GitHub release:
 
 ```bash
-helm install my-release https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.2.4/helm.tgz --set automationToken=YOUR_AUTOMATION_TOKEN
+helm install my-release https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.2.4/helm.tgz --set automationToken=YOUR_AUTOMATION_TOKEN -n monokle
 ```
+
+> **Tip**: To create namespace automatically as part of `helm install`, use `--create-namespace` flag.
 
 > See [customization section](#customizing-helm-deployment) below on what can be customized with Helm variables.
 
@@ -97,6 +99,7 @@ helm install my-release https://github.com/kubeshop/monokle-admission-controller
 You can install Monokle Admission Controller using `kubectl` and dedicated cloud install manifest:
 
 ```bash
+kubectl create ns monokle && \
 kubectl apply -f https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.2.4/install-cloud.yaml
 ```
 
@@ -113,7 +116,7 @@ kubectl patch secret monokle-synchronizer-token -p "{ \"data\": { \".token\": \"
 Latest Monokle Admission controller can be installed directly from DockerHub OCI registry:
 
 ```bash
-helm install my-release oci://registry-1.docker.io/kubeshop/monokle-admission-controller
+helm install my-release oci://registry-1.docker.io/kubeshop/monokle-admission-controller -n monokle
 ```
 
 _You can read more about DockerHub OCI registry [here](https://docs.docker.com/docker-hub/oci-artifacts/)_.
@@ -121,8 +124,10 @@ _You can read more about DockerHub OCI registry [here](https://docs.docker.com/d
 Or from GitHub release:
 
 ```bash
-helm install my-release https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.2.4/helm.tgz
+helm install my-release https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.2.4/helm.tgz -n monokle
 ```
+
+> **Tip**: To create namespace automatically as part of `helm install`, use `--create-namespace` flag.
 
 > See [customization section](#customizing-helm-deployment) below on what can be customized with Helm variables.
 
@@ -131,6 +136,7 @@ helm install my-release https://github.com/kubeshop/monokle-admission-controller
 You can install Monokle Admission Controller using `kubectl` and dedicated standalone install manifest:
 
 ```bash
+kubectl create ns monokle && \
 kubectl apply -f https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.2.4/install-standalone.yaml
 ```
 
@@ -456,7 +462,6 @@ The `validationActions` supports `Warn` and `Deny` actions at this stage. `Warn`
 
 You can refer to [`helm/values.yaml`](./helm/values.yaml) file to see what can be change for Helm deployment. The most important values:
 
-* `namespace` - namespace to which Monokle Admission Controller will be deployed (defaults to `monokle-admission-controller`). We advise to always deploy it to dedicated namespace.
 * `ignoreNamespaces` - list of namespaces which should be ignored by admission controller (this option has priority over policy bindings and Cloud sync). By default Kubernetes system namespaces and Monokle Admission Controller namespace are ignored.
 * `replicas` - number of admission controller pod server replicas.
 * `automationToken` - Monokle Cloud automation token to enable syncing with the cloud.

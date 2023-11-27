@@ -70,11 +70,16 @@ jobs:
       - name: Start Minikube
         run: minikube start --extra-config=apiserver.enable-admission-plugins=ValidatingAdmissionWebhook
 
-      - name: Deploy Admission Controller
-        run: ./scripts/deploy-${{ matrix.type }}.sh host.minikube.internal:5000 SAMPLE_TOKEN
+      - name: Deploy Admission Controller (Standalone)
+        if: matrix.type == 'standalone'
+        run: ./scripts/deploy-${{ matrix.type }}.sh monokle
+
+      - name: Deploy Admission Controller (Cloud)
+        if: matrix.type == 'cloud'
+        run: ./scripts/deploy-${{ matrix.type }}.sh host.minikube.internal:5000 SAMPLE_TOKEN monokle
 
       - name: Preview namespace state
-        run: kubectl -n monokle-admission-controller get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets
+        run: kubectl -n monokle get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets
 
       - name: Install Dependencies
         working-directory: ./tests/
@@ -127,12 +132,16 @@ jobs:
           eval $(minikube -p minikube docker-env)
           helm package ./helm --version 0.0.0
           helm install monokle-ac monokle-admission-controller-0.0.0.tgz \
-            --set namespace=mac-test \
             --set image.init.pullPolicy=Never \
             --set image.init.overridePath=admission-webhook-init \
             --set image.server.pullPolicy=Never \
             --set image.server.overridePath=admission-webhook \
-            --set logLevel=debug
+            --set logLevel=debug \
+            --namespace=mac-test \
+            --create-namespace
+
+      - name: List charts
+        run: helm list -A
 
       - name: Preview namespace state
         run: kubectl -n mac-test get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets
@@ -144,6 +153,9 @@ jobs:
       - name: Test
         working-directory: ./tests/
         run: MONOKLE_NAMESPACE=mac-test npm run test standalone
+
+      - name: Helm uninstall
+        run: helm uninstall monokle-ac -n mac-test
 
   test-helm-cloud:
     name: Helm (Cloud)
@@ -192,7 +204,6 @@ jobs:
           eval $(minikube -p minikube docker-env)
           helm package ./helm --version 0.0.0
           helm install monokle-ac monokle-admission-controller-0.0.0.tgz \
-            --set namespace=mac-test \
             --set image.init.pullPolicy=Never \
             --set image.init.overridePath=admission-webhook-init \
             --set image.server.pullPolicy=Never \
@@ -201,7 +212,12 @@ jobs:
             --set image.synchronizer.overridePath=admission-synchronizer \
             --set logLevel=debug \
             --set cloudApiUrl="host.minikube.internal:5000" \
-            --set automationToken=SAMPLE_TOKEN
+            --set automationToken=SAMPLE_TOKEN \
+            --namespace=mac-test \
+            --create-namespace
+
+      - name: List charts
+        run: helm list -A
 
       - name: Preview namespace state
         run: kubectl -n mac-test get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets
@@ -213,3 +229,6 @@ jobs:
       - name: Test
         working-directory: ./tests/
         run: MONOKLE_NAMESPACE=mac-test npm run test cloud
+
+      - name: Helm uninstall
+        run: helm uninstall monokle-ac -n mac-test

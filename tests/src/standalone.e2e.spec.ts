@@ -3,7 +3,7 @@ import { afterAll, afterEach, assert, beforeAll, describe, it } from 'vitest'
 import shell from 'shelljs';
 
 const VERBOSE = process.env.VERBOSE === 'true';
-const NAMESPACE = process.env.MONOKLE_NAMESPACE || 'monokle-admission-controller';
+const NAMESPACE = process.env.MONOKLE_NAMESPACE || 'monokle';
 
 const currentDir = __dirname;
 const mainDir = resolve(join(currentDir, '..', '..'));
