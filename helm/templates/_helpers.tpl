@@ -3,7 +3,7 @@
 {{- end }}
 
 {{- define "monokle-admission-controller.namespace" -}}
-{{ default .Release.Namespace .Values.namespace }}
+{{ .Release.Namespace }}
 {{- end }}
 
 {{- define "monokle-admission-controller.chart" -}}

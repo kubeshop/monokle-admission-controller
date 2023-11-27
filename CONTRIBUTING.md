@@ -19,26 +19,26 @@ minikube start --extra-config=apiserver.enable-admission-plugins=ValidatingAdmis
 ### Deploying (via Skaffold)
 
 ```bash
-./scripts/dev-standalone.sh
+./scripts/dev-standalone.sh namespace
 ```
 
 or for Cloud enabled version:
 
 ```bash
-/scripts/dev-cloud.sh cloudApiUrl
+/scripts/dev-cloud.sh cloudApiUrl automationToken namespace
 ```
 
 This will run a watcher and reload any time `./admission-controller/*` folder changes.
 
 ### Deploying (via Helm + Minikube registry)
 
-Deploying with helm requires having local docker registry (for locally build images). THis can be done with Minikube:
+Deploying with helm requires having local docker registry (for locally build images). This can be done with Minikube:
 
 ```bash
 eval $(minikube -p minikube docker-env)
 ```
 
-And then building images:
+Building images:
 
 ```bash
 cd admission-controller/init
@@ -53,6 +53,8 @@ minikube image build -t admission-synchronizer -f ./Dockerfile .
 docker images
 ```
 
+Installing chart:
+
 ```bash
 helm install monokle-ac ./helm \
 --set image.init.pullPolicy=Never \
@@ -60,7 +62,15 @@ helm install monokle-ac ./helm \
 --set image.server.pullPolicy=Never \
 --set image.server.overridePath=admission-webhook \
 --set image.synchronizer.pullPolicy=Never \
---set image.synchronizer.overridePath=admission-synchronizer
+--set image.synchronizer.overridePath=admission-synchronizer \
+--set createNamespace=true \
+--namespace monokle
+```
+
+Checking if it's ok:
+
+```bash
+helm list
 ```
 
 To uninstall:
@@ -71,10 +81,10 @@ helm uninstall monokle-ac
 
 ### Checking deployment state
 
-Namespaced resources (webhook server) will be deployed to dedicated `monokle-admission-controller` namespace, to watch it you can run:
+Namespaced resources (webhook server) will be deployed chosen namespace (`monokle` if you run above commands), to watch it you can run:
 
 ```bash
-watch kubectl -n monokle-admission-controller get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets,policies,policybindings
+watch kubectl -n monokle get all,CustomResourceDefinition,ValidatingWebhookConfiguration,secrets,policies,policybindings
 ```
 
 After it runs, the result should be something like:
@@ -118,7 +128,7 @@ kubectl describe crd policybindings.monokle.io
 The `monokle-admission-controller-server` has one init container which is responsible for certificate creation/renewal and propagation into cluster. Logs from it can be viewed with:
 
 ```bash
-kubectl -n monokle-admission-controller logs pod/monokle-admission-controller-server-... -c init
+kubectl -n monokle logs pod/monokle-admission-controller-server-... -c init
 ```
 
 ## Testing
