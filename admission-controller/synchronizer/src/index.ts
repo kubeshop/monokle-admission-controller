@@ -28,7 +28,10 @@ const tokenPath = path.join('/run/secrets/token', '.token');
   kc.loadFromCluster();
 
   const apiFetcher = new Fetcher(
-    new ApiHandler(CLOUD_API_URL),
+    new ApiHandler({
+      name: 'Monokle AdmissionController',
+      version: CURRENT_VERSION,
+    }, CLOUD_API_URL),
   );
   const policyUpdater = new PolicyUpdater(kc, logger);
 
