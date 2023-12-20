@@ -16,7 +16,7 @@ const CLOUD_API_URL = process.env.MONOKLE_CLOUD_API_URL ?? '';
 
 const COMMUNICATION_INTERVAL_SEC = 15;
 
-const logger = pino({
+const logger = pino<string>({
   name: 'Monokle:Synchronizer',
   level: LOG_LEVEL,
 });
@@ -28,10 +28,10 @@ const tokenPath = path.join('/run/secrets/token', '.token');
   kc.loadFromCluster();
 
   const apiFetcher = new Fetcher(
-    new ApiHandler({
+    new ApiHandler(CLOUD_API_URL, {
       name: 'Monokle AdmissionController',
       version: CURRENT_VERSION,
-    }, CLOUD_API_URL),
+    }),
   );
   const policyUpdater = new PolicyUpdater(kc, logger);
 
