@@ -81,6 +81,21 @@ describe(`Cloud (dir: ${mainDir})`, () => {
     assertResource(policy2, 'cluster-1-binding-2-policy');
   }, 45 * 1000);
 
+  it('correctly maps deny action', async () => {
+    mockServer = await startMockServer('actionDeny');
+
+    // Wait for getCluster query to run.
+    await waitForRequests(mockServer, 2);
+    // Wait for CRDs propagation.
+    await sleep(500);
+
+    const policy1 = await run('kubectl get monoklepolicy.monokle.io/cluster-1-binding-1-policy -o yaml');
+    const binding1 = await run('kubectl get monoklepolicybinding.monokle.io/cluster-1-binding-1-deny -o yaml');
+
+    assertResource(binding1, 'cluster-1-binding-1-deny');
+    assertResource(policy1, 'cluster-1-binding-1-policy');
+  }, 45 * 1000);
+
   // @TODO updates policy CRDs with new data
   // @TODO deletes policy CRDs
   // @TODO updates binding CRDs with new data

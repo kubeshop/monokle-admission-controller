@@ -241,7 +241,7 @@ export class PolicyUpdater {
   }
 
   protected mapValidationAction(action: string) {
-    const actionNormalized = action.toLowerCase().trim();
+    const actionNormalized = (action || '').toLowerCase().trim();
 
     switch (actionNormalized) {
       case 'warn':
@@ -249,8 +249,8 @@ export class PolicyUpdater {
       case 'deny':
         return 'Deny';
       default:
-        this._logger.error({ msg: 'Unknown validation action', action });
-        return 'Warn';
+        this._logger.error({ msg: 'Unknown validation action.', action });
+        return action;
     }
   }
 }
