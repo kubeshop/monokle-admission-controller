@@ -4,7 +4,7 @@ import cors from 'cors';
 import _ from 'lodash';
 import {RESPONSE_MOCK} from './response-mocks.js';
 
-type ResponseMockName = 'empty' | 'emptySync' | 'dataAllow' | 'dataBlock';
+type ResponseMockName = 'empty' | 'emptySync' | 'dataAllow' | 'actionDeny';
 
 type MockServer = {
   server: Server;

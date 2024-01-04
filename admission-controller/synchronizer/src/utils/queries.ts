@@ -10,6 +10,7 @@ export type ClusterQueryResponseBindingPolicy = {
 export type ClusterQueryResponseBinding = {
   id: string
   mode: 'ALLOW_LIST' | 'BLOCK_LIST'
+  action: 'warn' | 'deny'
   namespaces: string[]
   policy: ClusterQueryResponseBindingPolicy
 };
@@ -53,6 +54,7 @@ export const getClusterQuery = `
       bindings {
         id
         mode
+        action
         namespaces
         policy {
           id

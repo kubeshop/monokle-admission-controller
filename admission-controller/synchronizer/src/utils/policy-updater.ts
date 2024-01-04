@@ -216,7 +216,7 @@ export class PolicyUpdater {
 
     return {
       policyName: binding.policy.id,
-      validationActions: ['Warn'],
+      validationActions: [this.mapValidationAction(binding.action)],
       matchResources: {
         namespaceSelector: {
           matchExpressions: [{
@@ -238,5 +238,19 @@ export class PolicyUpdater {
     (binding2Copy as any).policy = { id: binding2.policy?.id };
 
     return _.isEqual(binding1Copy, binding2Copy);
+  }
+
+  protected mapValidationAction(action: string) {
+    const actionNormalized = (action || '').toLowerCase().trim();
+
+    switch (actionNormalized) {
+      case 'warn':
+        return 'Warn';
+      case 'deny':
+        return 'Deny';
+      default:
+        this._logger.error({ msg: 'Unknown validation action.', action });
+        return action;
+    }
   }
 }
