@@ -87,7 +87,7 @@ _You can read more about DockerHub OCI registry [here](https://docs.docker.com/d
 Or from GitHub release:
 
 ```bash
-helm install my-release https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.2.6/helm.tgz --set automationToken=YOUR_AUTOMATION_TOKEN -n monokle
+helm install my-release https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.2.7/helm.tgz --set automationToken=YOUR_AUTOMATION_TOKEN -n monokle
 ```
 
 > **Tip**: To create namespace automatically as part of `helm install`, use `--create-namespace` flag.
@@ -100,7 +100,7 @@ You can install Monokle Admission Controller using `kubectl` and dedicated cloud
 
 ```bash
 kubectl create ns monokle && \
-kubectl apply -f https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.2.6/install-cloud.yaml
+kubectl apply -f https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.2.7/install-cloud.yaml
 ```
 
 Since Monokle Cloud automation token needs to be provided, there is a dedicated secret created which needs to be updated:
@@ -124,7 +124,7 @@ _You can read more about DockerHub OCI registry [here](https://docs.docker.com/d
 Or from GitHub release:
 
 ```bash
-helm install my-release https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.2.6/helm.tgz -n monokle
+helm install my-release https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.2.7/helm.tgz -n monokle
 ```
 
 > **Tip**: To create namespace automatically as part of `helm install`, use `--create-namespace` flag.
@@ -137,7 +137,7 @@ You can install Monokle Admission Controller using `kubectl` and dedicated stand
 
 ```bash
 kubectl create ns monokle && \
-kubectl apply -f https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.2.6/install-standalone.yaml
+kubectl apply -f https://github.com/kubeshop/monokle-admission-controller/releases/download/v0.2.7/install-standalone.yaml
 ```
 
 ## Usage
