@@ -57,7 +57,7 @@ jobs:
 
     steps:
       - name: Setup Skaffold
-        run: curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 && sudo install skaffold /usr/local/bin/
+        run: curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v2.9.0/skaffold-linux-amd64 && chmod +x skaffold && sudo mv skaffold /usr/local/bin
 
       - name: Setup Node.js
         uses: actions/setup-node@v2
