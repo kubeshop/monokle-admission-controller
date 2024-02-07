@@ -1,8 +1,8 @@
 import pino from 'pino';
-import {getInformer} from './utils/get-informer.js';
 import {MonoklePolicy, MonoklePolicyBinding, PolicyManager} from './utils/policy-manager.js';
 import {ValidatorManager} from './utils/validator-manager.js';
 import {ValidationServer} from './utils/validation-server.js';
+import KubeClient from "./utils/kube-client.js";
 
 const LOG_LEVEL = (process.env.MONOKLE_LOG_LEVEL || 'warn').toLowerCase();
 const IGNORED_NAMESPACES = (process.env.MONOKLE_IGNORE_NAMESPACES || '').split(',').filter(Boolean);
@@ -13,7 +13,11 @@ const logger = pino({
 });
 
 (async() => {
-  const policyInformer = await getInformer<MonoklePolicy>(
+
+
+  KubeClient.buildKubeConfig();
+
+  const policyInformer = await KubeClient.getInformer<MonoklePolicy>(
     'monokle.io',
     'v1alpha1',
     'policies',
@@ -22,7 +26,7 @@ const logger = pino({
     }
   );
 
-  const bindingsInformer = await getInformer<MonoklePolicyBinding>(
+  const bindingsInformer = await KubeClient.getInformer<MonoklePolicyBinding>(
     'monokle.io',
     'v1alpha1',
     'policybindings',

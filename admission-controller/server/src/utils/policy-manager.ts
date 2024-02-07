@@ -2,9 +2,9 @@ import {EventEmitter} from 'events';
 import pino from 'pino';
 import {KubernetesObject, V1Namespace} from '@kubernetes/client-node';
 import {Config} from '@monokle/validation';
-import {InformerWrapper} from './get-informer.js';
 import {AdmissionRequestObject} from './validation-server.js';
 import {postprocess} from './policy-postprocessor.js';
+import {InformerWrapper} from "./kube-client";
 
 export type MonoklePolicy = KubernetesObject & {
   spec: Config

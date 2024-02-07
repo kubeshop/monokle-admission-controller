@@ -5,7 +5,7 @@ import {readFileSync} from 'fs';
 import {Message, Resource, RuleLevel, ValidationResult} from '@monokle/validation';
 import {V1ObjectMeta} from '@kubernetes/client-node';
 import {ValidatorManager} from './validator-manager.js';
-import { NamespaceGetter } from './namespace-getter.js';
+import KubeClient from "./kube-client.js";
 
 export type ValidationServerOptions = {
   port: number
@@ -57,7 +57,6 @@ export type Violation = {
 
 export class ValidationServer {
   private _server: ReturnType<typeof fastify>;
-  private _namespaceGetter: NamespaceGetter;
 
   constructor(
     private readonly _validators: ValidatorManager,
@@ -70,17 +69,16 @@ export class ValidationServer {
   ) {
     try {
       this._server = fastify({
-        https: {
-          key: readFileSync(path.join('/run/secrets/tls', 'tls.key')),
-          cert: readFileSync(path.join('/run/secrets/tls', 'tls.crt'))
-        }
+        // https: {
+        //   key: readFileSync(path.join('/run/secrets/tls', 'tls.key')),
+        //   cert: readFileSync(path.join('/run/secrets/tls', 'tls.crt'))
+        // }
       });
     } catch (err) {
       this._logger.error({msg: 'Failed to read TLS certificate', err});
       process.exit(1);
     }
 
-    this._namespaceGetter = new NamespaceGetter(this._logger);
     this._initRouting();
   }
 
@@ -136,7 +134,7 @@ export class ValidationServer {
         return response;
       }
 
-      const namespaceObject = namespace ? await this._namespaceGetter.getNamespace(namespace) : undefined;
+      const namespaceObject = namespace ? await KubeClient.getNamespace(namespace) : undefined;
 
       this._logger.debug({request: req, namespaceObject});
 

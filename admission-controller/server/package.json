@@ -17,6 +17,7 @@
     "isomorphic-fetch": "^3.0.0",
     "node-fetch": "^3.3.2",
     "pino": "^8.16.1",
+    "ts-node": "^10.9.2",
     "type-fest": "^4.5.0"
   },
   "devDependencies": {
