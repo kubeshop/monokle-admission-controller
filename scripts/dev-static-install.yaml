@@ -1,0 +1,244 @@
+---
+# Source: monokle-admission-controller/templates/service-account.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: monokle-policies-sa
+  namespace: monokle
+  labels:
+    helm.sh/chart: monokle-admission-controller-0.2.7
+    app.kubernetes.io/name: monokle-admission-controller
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "0.2.7"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: monokle-admission-controller/templates/monokle-policy-binding-crd.yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: policybindings.monokle.io
+spec:
+  group: monokle.io
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          required:
+            - spec
+          properties:
+            spec:
+              type: object
+              required:
+                - policyName
+                - validationActions
+              properties:
+                policyName:
+                  type: string
+                validationActions:
+                  type: array
+                  items:
+                    type: string
+                    enum: [Warn, Deny]
+                matchResources:
+                  type: object
+                  properties:
+                    namespaceSelector:
+                      type: object
+                      properties:
+                        matchLabels:
+                          type: object
+                          additionalProperties:
+                            type: string
+                        matchExpressions:
+                          type: array
+                          items:
+                            type: object
+                            required:
+                              - key
+                              - operator
+                              - values
+                            properties:
+                              key:
+                                type: string
+                              operator:
+                                type: string
+                                enum: [In, NotIn]
+                              values:
+                                type: array
+                                items:
+                                  type: string
+  scope: Cluster
+  names:
+    plural: policybindings
+    singular: policybinding
+    kind: MonoklePolicyBinding
+    shortNames:
+      - mpb
+---
+# Source: monokle-admission-controller/templates/monokle-policy-crd.yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: policies.monokle.io
+spec:
+  group: monokle.io
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        # For schema see:
+        # - maps/dicts - https://swagger.io/docs/specification/data-models/dictionaries/
+        # - structural schema - https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#specifying-a-structural-schema
+        #
+        # Object values as multitypes:
+        # Even though it's supported by OpenAPI spec, e.g. https://stackoverflow.com/a/46475776,
+        # Kubernetes requires "structural" definition # https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#specifying-a-structural-schema
+        # which seems to be in opposite to it "does not set description, type, default, additionalProperties, nullable
+        # within an allOf, anyOf, oneOf or not, with the exception of the two pattern for x-kubernetes-int-or-string: true (see below)."
+        openAPIV3Schema:
+          type: object
+          required:
+            - spec
+          properties:
+            spec:
+              type: object
+              required:
+                - plugins
+              properties:
+                plugins:
+                  type: object
+                  additionalProperties:
+                    type: boolean
+                rules:
+                  type: object
+                  additionalProperties: true
+                settings:
+                  type: object
+                  additionalProperties:
+                    type: object
+                    additionalProperties:
+                      type: string
+  scope: Cluster
+  names:
+    plural: policies
+    singular: policy
+    kind: MonoklePolicy
+    shortNames:
+      - mp
+---
+# Source: monokle-admission-controller/templates/service-account.yaml
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: monokle-policies-cluster
+  labels:
+    helm.sh/chart: monokle-admission-controller-0.2.7
+    app.kubernetes.io/name: monokle-admission-controller
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "0.2.7"
+    app.kubernetes.io/managed-by: Helm
+rules:
+  - apiGroups: ["monokle.io"]
+    resources: ["policies", "policybindings"]
+    verbs: ["list", "watch"]
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources: ["validatingwebhookconfigurations"]
+    verbs: ["get", "patch"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get"]
+---
+# Source: monokle-admission-controller/templates/service-account.yaml
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: monokle-policies-cluster
+  labels:
+    helm.sh/chart: monokle-admission-controller-0.2.7
+    app.kubernetes.io/name: monokle-admission-controller
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "0.2.7"
+    app.kubernetes.io/managed-by: Helm
+subjects:
+  - kind: ServiceAccount
+    name: monokle-policies-sa
+    namespace: monokle
+roleRef:
+  kind: ClusterRole
+  name: monokle-policies-cluster
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: monokle-admission-controller/templates/service-account.yaml
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: monokle-policies-namespace
+  namespace: monokle
+  labels:
+    helm.sh/chart: monokle-admission-controller-0.2.7
+    app.kubernetes.io/name: monokle-admission-controller
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "0.2.7"
+    app.kubernetes.io/managed-by: Helm
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "create", "delete"]
+---
+# Source: monokle-admission-controller/templates/service-account.yaml
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: monokle-policies-namespace
+  namespace: monokle
+  labels:
+    helm.sh/chart: monokle-admission-controller-0.2.7
+    app.kubernetes.io/name: monokle-admission-controller
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "0.2.7"
+    app.kubernetes.io/managed-by: Helm
+subjects:
+  - kind: ServiceAccount
+    name: monokle-policies-sa
+    namespace: monokle
+roleRef:
+  kind: Role
+  name: monokle-policies-namespace
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: monokle-admission-controller/templates/webhook.yaml
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: monokle-admission-controller-webhook
+  labels:
+    helm.sh/chart: monokle-admission-controller-0.2.7
+    app.kubernetes.io/name: monokle-admission-controller
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "0.2.7"
+    app.kubernetes.io/managed-by: Helm
+webhooks:
+  - name: monokle-admission-controller-server.monokle.svc
+    sideEffects: None
+    admissionReviewVersions: ["v1", "v1beta1"]
+    clientConfig:
+      url: https://host.docker.internal:8443/validate
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values:
+            - kube-node-lease
+            - kube-public
+            - kube-system
+            - monokle
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["*"]
+        apiVersions: ["*"]
+        resources: ["*"]
+        scope: "*"
