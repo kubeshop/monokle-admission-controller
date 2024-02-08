@@ -1,46 +1,49 @@
-import pino from 'pino';
-import {MonoklePolicy, MonoklePolicyBinding, PolicyManager} from './utils/policy-manager.js';
-import {ValidatorManager} from './utils/validator-manager.js';
-import {ValidationServer} from './utils/validation-server.js';
-import KubeClient from "./utils/kube-client.js";
+import KubeClient from './utils/kube-client.js';
+import { NestFactory } from '@nestjs/core';
+import { ServerModule } from './server.module';
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
+import { ConfigService } from './config.service';
+import Configuration from './config';
 
-const LOG_LEVEL = (process.env.MONOKLE_LOG_LEVEL || 'warn').toLowerCase();
-const IGNORED_NAMESPACES = (process.env.MONOKLE_IGNORE_NAMESPACES || '').split(',').filter(Boolean);
+const app = await NestFactory.create<NestFastifyApplication>(
+  ServerModule,
+  new FastifyAdapter({
+    https: Configuration.server.tls,
+  }),
+);
 
-const logger = pino({
-  name: 'Monokle',
-  level: LOG_LEVEL,
-});
+const config = app.get(ConfigService);
+app.useLogger(config.get('logLevel') as any);
 
-(async() => {
+KubeClient.buildKubeConfig();
 
+const policyInformer = await KubeClient.getInformer<MonoklePolicy>(
+  'monokle.io',
+  'v1alpha1',
+  'policies',
+  (err: any) => {
+    logger.error({
+      msg: 'Informer: Policies: Error',
+      err: err.message,
+      body: err.body,
+    });
+  },
+);
 
-  KubeClient.buildKubeConfig();
+const bindingsInformer = await KubeClient.getInformer<MonoklePolicyBinding>(
+  'monokle.io',
+  'v1alpha1',
+  'policybindings',
+  (err: any) => {
+    logger.error({
+      msg: 'Informer: Bindings: Error',
+      err: err.message,
+      body: err.body,
+    });
+  },
+);
 
-  const policyInformer = await KubeClient.getInformer<MonoklePolicy>(
-    'monokle.io',
-    'v1alpha1',
-    'policies',
-    (err: any) => {
-      logger.error({msg: 'Informer: Policies: Error', err: err.message, body: err.body});
-    }
-  );
-
-  const bindingsInformer = await KubeClient.getInformer<MonoklePolicyBinding>(
-    'monokle.io',
-    'v1alpha1',
-    'policybindings',
-    (err: any) => {
-      logger.error({msg: 'Informer: Bindings: Error', err: err.message, body: err.body});
-    }
-  );
-
-  const policyManager = new PolicyManager(policyInformer, bindingsInformer, logger);
-  const validatorManager = new ValidatorManager(policyManager, logger);
-
-  await policyManager.start();
-
-  const server = new ValidationServer(validatorManager, IGNORED_NAMESPACES, logger);
-
-  await server.start();
-})();
+await app.listen(config.get('server.port'), config.get('server.host'));
