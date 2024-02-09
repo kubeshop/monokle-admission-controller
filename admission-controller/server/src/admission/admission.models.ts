@@ -1,10 +1,50 @@
 import { V1ObjectMeta } from '@kubernetes/client-node';
 import { Message, RuleLevel } from '@monokle/validation';
 
-export type ValidationServerOptions = {
-  port: number;
-  host: string;
-};
+export interface AdmissionRequest {
+  kind: string;
+  apiVersion: string;
+  request: {
+    uid: string;
+    kind: ResourceApi;
+    resource: Resource;
+    requestKind: RequestKind;
+    requestResource: Resource;
+    name: string;
+    namespace: string;
+    operation: string;
+    userInfo: UserInfo;
+    object: any;
+    oldObject: any;
+    dryRun: boolean;
+    options: {
+      kind: string;
+      apiVersion: string;
+    };
+  };
+}
+
+export interface ResourceVersion {
+  group: string;
+  version: string;
+}
+
+export interface ResourceApi extends ResourceVersion {
+  kind: string;
+}
+
+export interface Resource extends ResourceVersion {
+  resource: string;
+}
+
+export interface RequestKind extends ResourceVersion {
+  kind: string;
+}
+
+export interface UserInfo {
+  username: string;
+  groups: string[];
+}
 
 export type AdmissionRequestObject = {
   apiVersion: string;
@@ -12,17 +52,6 @@ export type AdmissionRequestObject = {
   metadata: V1ObjectMeta;
   spec: any;
   status: any;
-};
-
-export type AdmissionRequest = {
-  apiVersion: string;
-  kind: string;
-  request: {
-    name: string;
-    namespace: string;
-    uid: string;
-    object: AdmissionRequestObject;
-  };
 };
 
 // See

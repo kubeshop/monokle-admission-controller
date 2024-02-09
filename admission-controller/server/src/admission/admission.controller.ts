@@ -140,7 +140,16 @@ export class AdmissionController {
 
   @Post()
   async validate(@Body() body: AdmissionRequest): Promise<AdmissionResponse> {
+    this.log.log(
+      `Received admission request: ${body.request.resource?.group}/${body
+        .request.resource?.version}/${body.request.resource?.resource} - ${
+        body.request.operation
+      } ${body.request.namespace ? body.request.namespace + '/' : ''}${
+        body.request.name
+      }`,
+    );
     this.log.verbose({ body });
+
     const namespace =
       body.request?.namespace || body.request?.object?.metadata?.namespace;
 
@@ -157,27 +166,26 @@ export class AdmissionController {
     };
 
     if (namespace && this.ignoredNamespaces.includes(namespace)) {
-      this.log.error({ msg: 'Namespace ignored', namespace });
+      this.log.error(`Namespace ignored: ${namespace}`);
       return response;
     }
 
     const resource = body.request?.object;
     if (!resource) {
-      this.log.error({ msg: 'No resource found', metadata: body.request });
+      this.log.error(`No resource found: ${body.request}`);
       return response;
     }
 
     const namespaceObject = namespace
       ? await this.$kubernetes.getNamespace(namespace)
       : undefined;
-    this.log.debug({ namespaceObject });
 
     const validators = this.$policies.getMatchingValidators(
       resource,
       namespaceObject,
     );
 
-    this.log.debug({ msg: 'Matching validators', count: validators.length });
+    this.log.debug(`Matching validators: ${validators.length}`);
 
     if (validators.length === 0) {
       return response;
@@ -218,7 +226,9 @@ export class AdmissionController {
     this.log.verbose({ resourceForValidation, validationResponses });
 
     if (violations.length === 0) {
-      this.log.debug({ msg: 'No violations', response });
+      this.log.log(
+        `No violations: ${resource.apiVersion}/${resource.kind} - ${resource.metadata?.name}`,
+      );
       return response;
     }
 
@@ -245,7 +255,7 @@ export class AdmissionController {
       response,
     );
 
-    this.log.debug({ response });
+    this.log.verbose(response);
     return responseFull;
   }
 }
