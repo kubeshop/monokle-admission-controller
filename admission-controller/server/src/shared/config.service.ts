@@ -1,5 +1,6 @@
 import { ConfigService as BaseConfigService } from '@nestjs/config';
-import Configuration from './config';
+import Configuration from '../config';
+import { Injectable } from '@nestjs/common';
 
 type NestedKeyOf<ObjectType extends object> = {
   [Key in keyof ObjectType &
@@ -8,6 +9,7 @@ type NestedKeyOf<ObjectType extends object> = {
     : `${Key}`;
 }[keyof ObjectType & (string | number | boolean)];
 
+@Injectable()
 export class ConfigService extends BaseConfigService {
   private readonly config: typeof Configuration;
 

@@ -1,7 +1,7 @@
 import * as FS from 'node:fs/promises';
 
 const Configuration = {
-  logLevel: process.env.MONOKLE_LOG_LEVEL ?? 'warn',
+  logLevel: process.env.MONOKLE_LOG_LEVEL ?? 'log',
   ignoredNamespaces: (process.env.MONOKLE_IGNORE_NAMESPACES ?? '')
     .split(',')
     .filter(Boolean),
@@ -11,7 +11,7 @@ const Configuration = {
     port: 8443,
     tls: {
       key: process.env.TLS_KEY ?? '/run/secrets/tls/tls.key',
-      cert: process.env.TLS_CERT ?? '/run/secrets/tls/tls.crt',
+      cert: process.env.TLS_CRT ?? '/run/secrets/tls/tls.crt',
     },
   },
 };
