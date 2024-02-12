@@ -24,7 +24,7 @@ import { WatcherService } from '../kubernetes/watcher.service';
 export class PoliciesService implements OnModuleInit {
   private static readonly PLUGIN_BLOCKLIST = ['resource-links'];
 
-  private readonly _logger = new Logger(PoliciesService.name);
+  private readonly log = new Logger(PoliciesService.name);
 
   private readonly policyStore = new Map<string, MonoklePolicy>(); // Map<policyName, policy>
   private readonly bindingStore = new Map<string, MonoklePolicyBinding>(); // Map<bindingName, binding>
@@ -87,7 +87,7 @@ export class PoliciesService implements OnModuleInit {
         if (!this.validatorStore.has(policy.binding.policyName)) {
           // This should not happen and means there is a bug in other place in the code. Raise warning and skip.
           // Do not create validator instance here to keep this function sync and to keep processing time low.
-          this._logger.warn(
+          this.log.warn(
             `Validator not found for policy: ${policy.binding.policyName}`,
           );
           return null;
@@ -107,11 +107,9 @@ export class PoliciesService implements OnModuleInit {
     resource: AdmissionRequestObject,
     resourceNamespace?: V1Namespace,
   ): MonokleApplicablePolicy[] {
-    this._logger.debug({
-      policies: this.policyStore.size,
-      bindings: this.bindingStore.size,
-    });
-
+    this.log.debug(
+      `policies: ${this.policyStore.size}, bindings: ${this.bindingStore.size}`,
+    );
     if (this.bindingStore.size === 0) {
       return [];
     }
@@ -121,7 +119,7 @@ export class PoliciesService implements OnModuleInit {
         const policy = this.policyStore.get(binding.spec.policyName);
 
         if (!policy) {
-          this._logger.error('Binding is pointing to missing policy', binding);
+          this.log.error('Binding is pointing to missing policy', binding);
           return null;
         }
 
@@ -150,8 +148,8 @@ export class PoliciesService implements OnModuleInit {
   private async onPolicy(rawPolicy: MonoklePolicy) {
     const policy = PoliciesService.postprocess(rawPolicy);
 
-    this._logger.log(`Policy change received: ${rawPolicy.metadata!.name}`);
-    this._logger.verbose({ rawPolicy, policy });
+    this.log.log(`Policy change received: ${rawPolicy.metadata!.name}`);
+    this.log.verbose({ rawPolicy, policy });
 
     this.policyStore.set(rawPolicy.metadata!.name!, policy);
 
@@ -172,7 +170,7 @@ export class PoliciesService implements OnModuleInit {
     // Run separately (instead of passing config to constructor) to make sure that validator
     // is ready when 'setupValidator' function call fulfills.
     await validator.preload(policy.spec);
-    this._logger.log(`Policy reconciled: ${rawPolicy.metadata!.name}`);
+    this.log.log(`Policy reconciled: ${rawPolicy.metadata!.name}`);
 
     this.validatorStore.set(policy.metadata!.name!, validator);
   }
@@ -184,8 +182,8 @@ export class PoliciesService implements OnModuleInit {
   private onPolicyRemoval(rawPolicy: MonoklePolicy) {
     const policy = PoliciesService.postprocess(rawPolicy);
 
-    this._logger.log(`Policy removed: ${rawPolicy.metadata!.name}`);
-    this._logger.verbose({ rawPolicy, policy });
+    this.log.log(`Policy removed: ${rawPolicy.metadata!.name}`);
+    this.log.verbose({ rawPolicy, policy });
 
     this.policyStore.delete(rawPolicy.metadata!.name!);
     this.validatorStore.delete(policy.metadata!.name!);
@@ -200,8 +198,8 @@ export class PoliciesService implements OnModuleInit {
       ':update',
   )
   private onBinding(rawBinding: MonoklePolicyBinding) {
-    this._logger.log(`Binding updated: ${rawBinding.metadata!.name}`);
-    this._logger.verbose({ rawBinding });
+    this.log.log(`Binding updated: ${rawBinding.metadata!.name}`);
+    this.log.verbose({ rawBinding });
 
     this.bindingStore.set(rawBinding.metadata!.name!, rawBinding);
   }
@@ -211,8 +209,8 @@ export class PoliciesService implements OnModuleInit {
       ':delete',
   )
   private onBindingRemoval(rawBinding: MonoklePolicyBinding) {
-    this._logger.log(`Binding removed: ${rawBinding.metadata!.name}`);
-    this._logger.verbose({ rawBinding });
+    this.log.log(`Binding removed: ${rawBinding.metadata!.name}`);
+    this.log.verbose({ rawBinding });
 
     this.bindingStore.delete(rawBinding.metadata!.name!);
   }
@@ -232,7 +230,7 @@ export class PoliciesService implements OnModuleInit {
       ((resource as any).namespace || resource.metadata.namespace) ===
       undefined;
 
-    this._logger.verbose('Checking if resource matches binding', {
+    this.log.verbose('Checking if resource matches binding', {
       namespaceMatchLabels,
       namespaceMatchExpressions,
       kind,

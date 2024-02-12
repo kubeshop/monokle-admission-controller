@@ -6,17 +6,20 @@ import k8s from '@kubernetes/client-node';
 export class ResourceService {
   constructor(private readonly $client: ClientService) {}
 
-  listNamespaces() {
-    return this.$client
-      .api(k8s.CoreV1Api)
-      .listNamespace()
-      .then((res) => res.body.items);
+  async listNamespaces() {
+    const res = await this.$client.api(k8s.CoreV1Api).listNamespace();
+    return res.body.items;
   }
 
-  getNamespace(name: string) {
-    return this.$client
-      .api(k8s.CoreV1Api)
-      .readNamespace(name)
-      .then((res) => res.body);
+  async getNamespace(name: string) {
+    const res = await this.$client.api(k8s.CoreV1Api).readNamespace(name);
+    return res.body;
+  }
+
+  async list(apiVersion: string, kind: string, namespace?: string) {
+    const res = await this.$client
+      .api(k8s.KubernetesObjectApi)
+      .list(apiVersion, kind, namespace);
+    return res.body.items;
   }
 }
