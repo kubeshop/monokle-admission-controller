@@ -1,4 +1,6 @@
 export type ResourceIdentifier = {
+  apiVersion?: string;
+  group?: string;
   kind: string;
-  apiVersion: string;
+  version?: string;
 };

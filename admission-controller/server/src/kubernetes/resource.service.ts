@@ -22,4 +22,16 @@ export class ResourceService {
       .list(apiVersion, kind, namespace);
     return res.body.items;
   }
+
+  async listCRDs() {
+    const res = await this.$client
+      .api(k8s.ApiextensionsV1Api)
+      .listCustomResourceDefinition();
+    return res.body.items;
+  }
+
+  async listAPIs() {
+    const res = await this.$client.api(k8s.ApisApi).getAPIVersions();
+    return res.body;
+  }
 }
