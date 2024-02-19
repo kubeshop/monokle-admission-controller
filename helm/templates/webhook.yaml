@@ -28,7 +28,29 @@ webhooks:
             {{- end }}
     rules:
       - operations: ["CREATE", "UPDATE"]
-        apiGroups: ["*"]
+        apiGroups: ["apps", "batch", "", "autoscaling", "networking.k8s.io"]
         apiVersions: ["*"]
-        resources: ["*"]
+        resources:
+          - deployments
+          - daemonsets
+          - statefulsets
+          - cronjobs
+          - jobs
+          - pods
+          - services
+          - configmaps
+          - secrets
+          - services
+          - persistentvolumeclaims
+          - ingresses
+        scope: "Namespaced"
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["rbac.authorization.k8s.io", ""]
+        apiVersions: ["*"]
+        resources:
+          - serviceaccounts
+          - roles
+          - rolebindings
+          - clusterroles
+          - clusterrolebindings
         scope: "*"
