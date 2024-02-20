@@ -1,42 +1,36 @@
-import pino from 'pino';
-import {getInformer} from './utils/get-informer.js';
-import {MonoklePolicy, MonoklePolicyBinding, PolicyManager} from './utils/policy-manager.js';
-import {ValidatorManager} from './utils/validator-manager.js';
-import {ValidationServer} from './utils/validation-server.js';
+import { NestFactory } from '@nestjs/core';
+import { ServerModule } from './server.module';
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
+import Configuration from './config';
+import { ConfigService } from './shared/config.service';
+import { Logger, LogLevel } from '@nestjs/common';
 
-const LOG_LEVEL = (process.env.MONOKLE_LOG_LEVEL || 'warn').toLowerCase();
-const IGNORED_NAMESPACES = (process.env.MONOKLE_IGNORE_NAMESPACES || '').split(',').filter(Boolean);
+const LOG_LEVELS = [
+  'fatal',
+  'error',
+  'warn',
+  'log',
+  'debug',
+  'verbose',
+] as LogLevel[];
 
-const logger = pino({
-  name: 'Monokle',
-  level: LOG_LEVEL,
-});
+const app = await NestFactory.create<NestFastifyApplication>(
+  ServerModule,
+  new FastifyAdapter({
+    https: Configuration.server.tls,
+  }),
+);
 
-(async() => {
-  const policyInformer = await getInformer<MonoklePolicy>(
-    'monokle.io',
-    'v1alpha1',
-    'policies',
-    (err: any) => {
-      logger.error({msg: 'Informer: Policies: Error', err: err.message, body: err.body});
-    }
-  );
+const config = app.get(ConfigService);
+const levels = LOG_LEVELS.slice(LOG_LEVELS.indexOf(config.get('logLevel')));
+app.useLogger([config.get('logLevel')]);
 
-  const bindingsInformer = await getInformer<MonoklePolicyBinding>(
-    'monokle.io',
-    'v1alpha1',
-    'policybindings',
-    (err: any) => {
-      logger.error({msg: 'Informer: Bindings: Error', err: err.message, body: err.body});
-    }
-  );
-
-  const policyManager = new PolicyManager(policyInformer, bindingsInformer, logger);
-  const validatorManager = new ValidatorManager(policyManager, logger);
-
-  await policyManager.start();
-
-  const server = new ValidationServer(validatorManager, IGNORED_NAMESPACES, logger);
-
-  await server.start();
-})();
+await app.listen(config.get('server.port'), config.get('server.host'));
+new Logger('Entrypoint').log(
+  `Server listening on ${config.get('server.host')}:${config.get(
+    'server.port',
+  )}`,
+);

@@ -1,8 +1,7 @@
-import k8s from '@kubernetes/client-node';
 import retry from 'async-retry';
 import logger, { formatLog } from './utils/logger.js';
 import { generateCertificates, isCertExpiring, isCertValid } from './utils/certificates.js';
-import { getSecretCertificate, applySecretCertificate, getWebhookConfiguration, patchWebhookCertificate } from './utils/kubernetes.js';
+import KubeClient from "./utils/kube-client.js";
 
 const NAMESPACE = (process.env.MONOKLE_NAMESPACE || 'monokle-admission-controller');
 
@@ -33,15 +32,14 @@ const WEBHOOK_NAME = 'monokle-admission-controller-webhook';
 // Such order of actions prevents from cases where secret (with cert) is updated but webhook is not.
 // At the same time, entire process is treated as atomic one, if something goes wrong, retry from the beginning.
 async function run(_bail: (e: Error) => void, _attempt: number) {
-  const kc = new k8s.KubeConfig();
-  kc.loadFromCluster();
+  KubeClient.buildKubeConfig();
 
-  const webhookConfig = await getWebhookConfiguration(NAMESPACE, WEBHOOK_NAME, kc);
+  const webhookConfig = await KubeClient.getWebhookConfiguration(NAMESPACE, WEBHOOK_NAME);
   if (!webhookConfig) {
     throw new Error(`Webhook ${NAMESPACE}/${WEBHOOK_NAME} does not exist.`);
   }
 
-  const existingCert = await getSecretCertificate(NAMESPACE, SECRET_NAME, kc);
+  const existingCert = await KubeClient.getSecretCertificate(NAMESPACE, SECRET_NAME);
   if (existingCert && isCertValid(existingCert.certificate) && !isCertExpiring(existingCert.certificate, 90)) {
     logger.info('Valid cert already exists.');
     return;
@@ -49,14 +47,14 @@ async function run(_bail: (e: Error) => void, _attempt: number) {
 
   const certs = generateCertificates(NAMESPACE, 6);
 
-  const webhookPatched = patchWebhookCertificate(NAMESPACE, WEBHOOK_NAME, webhookConfig, certs.caCert, kc);
+  const webhookPatched = KubeClient.patchWebhookCertificate(NAMESPACE, WEBHOOK_NAME, webhookConfig, certs.caCert);
   if (!webhookPatched) {
     throw new Error('Failed to update webhook.');
   }
 
   logger.info('Webhook patched successfully.');
 
-  const certCreated = await applySecretCertificate(NAMESPACE, SECRET_NAME, certs.serverKey, certs.serverCert, kc);
+  const certCreated = await KubeClient.applySecretCertificate(NAMESPACE, SECRET_NAME, certs.serverKey, certs.serverCert);
   if (!certCreated) {
     throw new Error('Failed to create secret.');
   }
